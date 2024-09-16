@@ -1,0 +1,12 @@
+services:
+  web: 
+    volumes:
+      - ./app:/app  # Bind mount the local 'app' directory to '/app' in the container
+    build:
+      context: app
+      target: builder
+    # flask requires SIGINT to stop gracefully
+    # (default stop signal from Compose is SIGTERM)
+    stop_signal: SIGINT
+    ports:
+      - '8000:8000'

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .interaction { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Voice Assistant</h1>
+
+    <div>
+        <button id="startBtn">Start Recording</button>
+        <button id="stopBtn" disabled>Stop Recording</button>
+        <label for="timerInput">Set Timer (seconds): </label>
+        <input type="number" id="timerInput" value="10" min="1">
+        <span id="timer">${timerInput.value}</span>
+    </div>
+
+    <div id="interactions">
+        <!-- Previous interactions will appear here -->
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let countdown;
+        let timeLeft = 10;
+
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const timerEl = document.getElementById('timer');
+        const interactions = document.getElementById('interactions');
+        const timerInput = document.getElementById('timerInput');
+
+        startBtn.addEventListener('click', async () => {
+            timeLeft = timerInput.value;
+            audioChunks = [];
+
+            // Start countdown timer
+            countdown = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+                if (timeLeft === 0) {
+                    stopRecording();
+                }
+            }, 1000);
+
+            // Request microphone access
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+
+            // Start recording
+            mediaRecorder.start();
+
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            mediaRecorder.addEventListener('dataavailable', (event) => {
+                audioChunks.push(event.data);
+            });
+        });
+
+        stopBtn.addEventListener('click', stopRecording);
+
+        function stopRecording() {
+            clearInterval(countdown);
+            timerEl.textContent = 10; // Reset timer
+
+            mediaRecorder.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+
+            mediaRecorder.addEventListener('stop', async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+                const formData = new FormData();
+                formData.append('audio', audioBlob);
+
+                // const interaction = document.createElement('div');
+                // interaction.classList.add('interaction');
+                // interaction.innerHTML = `
+                //     <audio controls src="${audioUrl}"></audio>
+                // `;            
+
+                // Send audio data to the backend
+                const response = await fetch('/process-audio', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const result = await response.json();
+
+                // Create an audio element to preview the recording
+                const audioElement = document.createElement('audio');
+                audioElement.controls = true;
+                audioElement.src = URL.createObjectURL(audioBlob);
+                interactions.appendChild(audioElement);
+                console.log(audioElement.src);
+
+
+                // Display the transcribed and inferred text and speech
+                addInteraction(result.transcript, result.responseText, result.audioUrl);
+            });
+        }
+
+        function addInteraction(transcript, responseText, audioUrl) {
+            const interaction = document.createElement('div');
+            interaction.classList.add('interaction');
+            interaction.innerHTML = `
+                <p><strong>You:</strong> ${transcript}</p>
+                <p><strong>Assistant:</strong> ${responseText}</p>
+            `;
+            interactions.appendChild(interaction);
+        }
+    </script>
+</body>
+</html>
