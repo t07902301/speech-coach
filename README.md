@@ -1,57 +1,59 @@
-## Compose sample application
-### Python/Flask application
+# Language Tutor
 
-Project structure:
-```
-.
-├── compose.yaml
-├── app
-    ├── Dockerfile
-    ├── requirements.txt
-    └── app.py
+A virtua language tutor that helps you to work for English C1 level (coherence, cohesion, vocabulary/grammar, and pronounciation)!
+
+## What can it do?
+
+- [x] Replay your voice recordings
+- [x] Display refined versions from LLM 
+- [x] Timer to limit answer length 
+- [ ] Shadow reading
+- [ ] Pronounciation assessement
+
+
+**Demo**
+
+![Demo Screenshot](app-demo.png)
+
+
+## How does it work? 
+
+### Frontend
+
+ - [x] HTML/JS
+ - [ ] React 
+ - [ ] Better storage and speed
+
+### Backend
+ - [x] Flask
+ - [ ] Java + Sprintbot
+ - [ ] API design
+ - [ ] Latency and scalability
+
+### Model Endpoints
+ - [x] OpenAI 
+ - [ ] Deepgram for streaming 
+ - [ ] self-hosted Models
+
+### Infrastructure
+ - [x] Docker 
+ - [ ] Cloud deployment 
+
+## How to use it?
+
+
+1. Config `API_KEY` after `cp .env.example .env` and adding OpenAI API key.
+
+2. Deploy in the root directory of this project. 
 
 ```
+$ docker compose up -d --build
+[+] Building 1.4s (17/17) FINISHED
+ => [web internal] load build definition from Dockerfile                                     
 
-[_compose.yaml_](compose.yaml)
-```
-services: 
-  web: 
-    build:
-     context: app
-     target: builder
-    ports: 
-      - '8000:8000'
-```
-
-## Deploy with docker compose
-
-```
-$ docker compose up -d
-[+] Building 1.1s (16/16) FINISHED
- => [internal] load build definition from Dockerfile                                                                                                                                                                                       0.0s
-    ...                                                                                                                                         0.0s
- => => naming to docker.io/library/flask_web                                                                                                                                                                                               0.0s
 [+] Running 2/2
- ⠿ Network flask_default  Created                                                                                                                                                                                                          0.0s
- ⠿ Container flask-web-1  Started
+ ⠿ Network language-tutor_default  Created                                                                                       
+ ⠿ Container language-tutor-web-1  Started
 ```
 
-## Expected result
-
-Listing containers must show one container running and the port mapping as below:
-```
-$ docker compose ps
-NAME                COMMAND             SERVICE             STATUS              PORTS
-flask-web-1         "python3 app.py"    web                 running             0.0.0.0:8000->8000/tcp
-```
-
-After the application starts, navigate to `http://localhost:8000` in your web browser or run:
-```
-$ curl localhost:8000
-Hello World!
-```
-
-Stop and remove the containers
-```
-$ docker compose down
-```
+2. Open http://localhost:8000/ 

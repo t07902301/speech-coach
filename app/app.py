@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from openai import OpenAI
 import tempfile
 from flask import Flask, abort, request, jsonify, render_template
@@ -7,7 +8,11 @@ import wave
 import contextlib
 # from pydub import AudioSegment
 # from flask_cors import CORS
+
 # Set your OpenAI API key
+# Load environment variables from .env
+load_dotenv()
+API_KEY = os.getenv('API_KEY')
 # cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 # from werkzeug.exceptions import HTTPException
