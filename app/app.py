@@ -30,7 +30,7 @@ def transcribe_voice(audio_location):
 
 def chat_completion_call(text):
     client = OpenAI(api_key=API_KEY)
-    system_prompt = "You are an English tutor. Please refine user's talk to make them more natural and grammatically correct."
+    system_prompt = "You are an IELTS English tutor. Please refine user's talk to make them sound more natural and grammarly correct."
     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": text}]
     response = client.chat.completions.create(model="gpt-3.5-turbo-1106", messages=messages)
     return response.choices[0].message.content
@@ -43,8 +43,8 @@ def text_to_speech_ai(api_response):
 
 import ffmpeg
 
-@app.route('/process-audio', methods=['POST'])
-def process_audio():
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
 
@@ -66,9 +66,9 @@ def process_audio():
     transcript_response = transcribe_voice(temp_converted_audio_file.name)
     app.logger.info(" get transcript_response")
 
-    # Generate an inference/response based on the transcript
-    response_text = chat_completion_call(transcript_response)
-    app.logger.info(" get response_text")
+    # # Generate an inference/response based on the transcript
+    # response_text = chat_completion_call(transcript_response)
+    # app.logger.info(" get response_text")
 
     # # Generate speech audio from the response
     # audio_response = text_to_speech_ai(response_text)
@@ -87,8 +87,16 @@ def process_audio():
 
     return jsonify({
         'transcript': transcript_response,
-        'responseText': response_text,
+        # 'responseText': response_text,
         # 'audioUrl': gen_audio
+    })
+
+@app.route('/get_revision', methods=['POST'])
+def get_response():
+    data = request.get_json()
+    response_text = chat_completion_call(data['transcript'])
+    return jsonify({
+        'responseText': response_text,
     })
 
 # Serve the audio file
