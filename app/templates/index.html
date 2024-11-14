@@ -87,38 +87,56 @@
                 const formData = new FormData();
                 formData.append('audio', audioBlob);
 
-                // const interaction = document.createElement('div');
-                // interaction.classList.add('interaction');
-                // interaction.innerHTML = `
-                //     <audio controls src="${audioUrl}"></audio>
-                // `;            
-
-                // Send audio data to the backend
-                const response = await fetch('/process-audio', {
-                    method: 'POST',
-                    body: formData,
-                });
-                const result = await response.json();
-
                 // Create an audio element to preview the recording
                 const audioElement = document.createElement('audio');
                 audioElement.controls = true;
                 audioElement.src = URL.createObjectURL(audioBlob);
                 interactions.appendChild(audioElement);
-                console.log(audioElement.src);
+                // console.log(audioElement.src);
 
+                // Add a button to transcribe the recording
+                let transcriptionData; // Declare transcriptionData variable
+                const transcribeBtn = document.createElement('button');
+                transcribeBtn.textContent = 'Transcribe Recording';
+                transcribeBtn.addEventListener('click', async () => {
+                    const response = await fetch('/transcribe', {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    transcriptionData = await response.json(); // Assign transcriptionData
+                    addInteraction('Transcription', transcriptionData.transcript);
+                });
+                interactions.appendChild(transcribeBtn);
 
-                // Display the transcribed and inferred text and speech
-                addInteraction(result.transcript, result.responseText, result.audioUrl);
+                // Add a button to revise the recording
+                interactions.appendChild(transcribeBtn);
+                const reviseBtn = document.createElement('button');
+                reviseBtn.textContent = 'Revise Recording';
+                reviseBtn.addEventListener('click', async () => {
+                    console.log(audioElement.src);
+                    const response = await fetch('/get_revision', {
+                        method: 'POST',
+                        body: JSON.stringify({ transcript: transcriptionData.transcript }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const revisedData = await response.json();
+                    addInteraction('Revised', revisedData.responseText);
+                });
+                interactions.appendChild(reviseBtn);
             });
-        }
 
-        function addInteraction(transcript, responseText, audioUrl) {
+
+        }
+                    
+
+
+        function addInteraction(role, text) {
             const interaction = document.createElement('div');
             interaction.classList.add('interaction');
             interaction.innerHTML = `
-                <p><strong>You:</strong> ${transcript}</p>
-                <p><strong>Assistant:</strong> ${responseText}</p>
+                <p><strong> ${role}:</strong> ${text}</p>
             `;
             interactions.appendChild(interaction);
         }
