@@ -1,21 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
+import Transcription from "./components/Transcription";
+import CanvasVisualizer from "./components/CanvasVisualizer";
+import TimerInput from "./components/TimerInput";
 
-// TimerInput Component
-function TimerInput({ timerDuration, setTimerDuration, isRecording }) {
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <label>
-        Set Timer (optional, in seconds):{" "}
-        <input
-          type="number"
-          value={timerDuration}
-          onChange={(e) => setTimerDuration(Number(e.target.value))}
-          disabled={isRecording}
-        />
-      </label>
-    </div>
-  );
-}
 
 // RecorderControls Component
 function RecorderControls({ isRecording, isPaused, onStart, onStop, onTogglePauseResume }) {
@@ -34,71 +21,6 @@ function RecorderControls({ isRecording, isPaused, onStart, onStop, onTogglePaus
   );
 }
 
-// CanvasVisualizer Component
-function CanvasVisualizer({ analyserRef, canvasRef }) {
-  useEffect(() => {
-    let animationId;
-    if (analyserRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const canvasContext = canvas.getContext("2d");
-      const analyser = analyserRef.current;
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-      const draw = () => {
-        analyser.getByteTimeDomainData(dataArray);
-
-        canvasContext.fillStyle = "rgb(200, 200, 200)";
-        canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-
-        canvasContext.lineWidth = 2;
-        canvasContext.strokeStyle = "rgb(0, 0, 0)";
-        canvasContext.beginPath();
-
-        const sliceWidth = (canvas.width * 1.0) / dataArray.length;
-        let x = 0;
-
-        for (let i = 0; i < dataArray.length; i++) {
-          const v = dataArray[i] / 128.0;
-          const y = (v * canvas.height) / 2;
-
-          if (i === 0) {
-            canvasContext.moveTo(x, y);
-          } else {
-            canvasContext.lineTo(x, y);
-          }
-
-          x += sliceWidth;
-        }
-
-        canvasContext.lineTo(canvas.width, canvas.height / 2);
-        canvasContext.stroke();
-
-        animationId = requestAnimationFrame(draw);
-      };
-
-      draw();
-    }
-
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, [analyserRef]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      width="600"
-      height="200"
-      style={{
-        display: "block",
-        margin: "20px auto",
-        border: "1px solid #ccc",
-      }}
-    ></canvas>
-  );
-}
 
 // AudioPlayer Component
 function AudioPlayer({ audioUrl }) {
@@ -127,6 +49,10 @@ export default function VoiceRecorder() {
   const timerRef = useRef(null); // Ref for the countdown timer
 
   const startRecording = async () => {
+    console.log("startRecording");
+
+    audioChunksRef.current = []; // Reset audio chunks
+
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert("Your browser does not support audio recording.");
       return;
@@ -147,9 +73,8 @@ export default function VoiceRecorder() {
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         setAudioUrl(URL.createObjectURL(audioBlob));
-        audioChunksRef.current = [];
       };
-
+    
       const audioContext = new AudioContext();
       const analyser = audioContext.createAnalyser();
       const source = audioContext.createMediaStreamSource(stream);
@@ -226,8 +151,10 @@ export default function VoiceRecorder() {
           Time Remaining: {remainingTime}s
         </div>
       )}
-      <CanvasVisualizer analyserRef={analyserRef} canvasRef={canvasRef} />
+      {/*ref.current is mutable. If the ref object isn't attached to a DOM node, read and write this value outside rendering. */}
+      <CanvasVisualizer analyser={analyserRef.current} canvasRef={canvasRef} /> 
       <AudioPlayer audioUrl={audioUrl} />
+      <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/webm" }) : null} />
     </div>
   );
 }

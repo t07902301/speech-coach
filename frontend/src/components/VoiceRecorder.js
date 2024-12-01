@@ -1,5 +1,50 @@
 import React, { useState, useRef, useEffect } from "react";
 
+// Transcription Component
+function Transcription({ audioBlob }) {
+    const [transcription, setTranscription] = useState("");
+
+    const transcribeAudio = async () => {
+        if (!audioBlob) {
+            alert("No audio available for transcription.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", audioBlob, "recording.webm");
+
+        try {
+            const response = await fetch("/fake_transcribe", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error("Transcription failed");
+            }
+
+            const data = await response.json();
+            setTranscription(data.transcription);
+        } catch (error) {
+            console.error("Error transcribing audio:", error);
+            alert("Error transcribing audio.");
+        }
+    };
+
+    return (
+        <div style={{ marginTop: "20px" }}>
+            <button onClick={transcribeAudio} disabled={!audioBlob}>
+                Transcribe Recording
+            </button>
+            {transcription && (
+                <div style={{ marginTop: "10px" }}>
+                    <h3>Transcription</h3>
+                    <p>{transcription}</p>
+                </div>
+            )}
+        </div>
+    );
+}
 // TimerInput Component
 function TimerInput({ timerDuration, setTimerDuration, isRecording }) {
   return (
@@ -35,13 +80,15 @@ function RecorderControls({ isRecording, isPaused, onStart, onStop, onTogglePaus
 }
 
 // CanvasVisualizer Component
-function CanvasVisualizer({ analyserRef, canvasRef }) {
+function CanvasVisualizer({ analyser, canvasRef }) {
+
   useEffect(() => {
     let animationId;
-    if (analyserRef.current && canvasRef.current) {
+    if (analyser && canvasRef.current) {
+      console.log('ready to draw')
       const canvas = canvasRef.current;
       const canvasContext = canvas.getContext("2d");
-      const analyser = analyserRef.current;
+      // const analyser = analyserRef.current;
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
       const draw = () => {
@@ -84,7 +131,7 @@ function CanvasVisualizer({ analyserRef, canvasRef }) {
         cancelAnimationFrame(animationId);
       }
     };
-  }, [analyserRef]);
+  }, [analyser]);
 
   return (
     <canvas
@@ -127,6 +174,8 @@ export default function VoiceRecorder() {
   const timerRef = useRef(null); // Ref for the countdown timer
 
   const startRecording = async () => {
+    console.log("startRecording");
+
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert("Your browser does not support audio recording.");
       return;
@@ -226,8 +275,10 @@ export default function VoiceRecorder() {
           Time Remaining: {remainingTime}s
         </div>
       )}
-      <CanvasVisualizer analyserRef={analyserRef} canvasRef={canvasRef} />
+      {/*ref.current is mutable. If the ref object isn't attached to a DOM node, read and write this value outside rendering. */}
+      <CanvasVisualizer analyser={analyserRef.current} canvasRef={canvasRef} /> 
       <AudioPlayer audioUrl={audioUrl} />
+      {/* <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/webm" }) : null} /> */}
     </div>
   );
 }
