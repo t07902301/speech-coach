@@ -1,163 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
+import Transcription from "./components/Transcription";
+import CanvasVisualizer from "./components/CanvasVisualizer";
+import TimerInput from "./components/TimerInput";
+import RecorderControls from "./components/RecorderControls";
+import AudioPlayer from "./components/AudioPlayer";
 
-// Transcription Component
-function Transcription({ audioBlob }) {
-    const [transcription, setTranscription] = useState("");
-
-    const transcribeAudio = async () => {
-        if (!audioBlob) {
-            alert("No audio available for transcription.");
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("file", audioBlob, "recording.webm");
-
-        try {
-            const response = await fetch("/fake_transcribe", {
-                method: "POST",
-                body: formData,
-            });
-
-            if (!response.ok) {
-                throw new Error("Transcription failed");
-            }
-
-            const data = await response.json();
-            setTranscription(data.transcription);
-        } catch (error) {
-            console.error("Error transcribing audio:", error);
-            alert("Error transcribing audio.");
-        }
-    };
-
-    return (
-        <div style={{ marginTop: "20px" }}>
-            <button onClick={transcribeAudio} disabled={!audioBlob}>
-                Transcribe Recording
-            </button>
-            {transcription && (
-                <div style={{ marginTop: "10px" }}>
-                    <h3>Transcription</h3>
-                    <p>{transcription}</p>
-                </div>
-            )}
-        </div>
-    );
-}
-// TimerInput Component
-function TimerInput({ timerDuration, setTimerDuration, isRecording }) {
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <label>
-        Set Timer (optional, in seconds):{" "}
-        <input
-          type="number"
-          value={timerDuration}
-          onChange={(e) => setTimerDuration(Number(e.target.value))}
-          disabled={isRecording}
-        />
-      </label>
-    </div>
-  );
-}
-
-// RecorderControls Component
-function RecorderControls({ isRecording, isPaused, onStart, onStop, onTogglePauseResume }) {
-  return (
-    <div>
-      <button onClick={onStart} disabled={isRecording}>
-        Start
-      </button>
-      <button onClick={onStop} disabled={!isRecording}>
-        Stop
-      </button>
-      <button onClick={onTogglePauseResume} disabled={!isRecording}>
-        {isPaused ? "Resume" : "Pause"}
-      </button>
-    </div>
-  );
-}
-
-// CanvasVisualizer Component
-function CanvasVisualizer({ analyser, canvasRef }) {
-
-  useEffect(() => {
-    let animationId;
-    if (analyser && canvasRef.current) {
-      console.log('ready to draw')
-      const canvas = canvasRef.current;
-      const canvasContext = canvas.getContext("2d");
-      // const analyser = analyserRef.current;
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-      const draw = () => {
-        analyser.getByteTimeDomainData(dataArray);
-
-        canvasContext.fillStyle = "rgb(200, 200, 200)";
-        canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-
-        canvasContext.lineWidth = 2;
-        canvasContext.strokeStyle = "rgb(0, 0, 0)";
-        canvasContext.beginPath();
-
-        const sliceWidth = (canvas.width * 1.0) / dataArray.length;
-        let x = 0;
-
-        for (let i = 0; i < dataArray.length; i++) {
-          const v = dataArray[i] / 128.0;
-          const y = (v * canvas.height) / 2;
-
-          if (i === 0) {
-            canvasContext.moveTo(x, y);
-          } else {
-            canvasContext.lineTo(x, y);
-          }
-
-          x += sliceWidth;
-        }
-
-        canvasContext.lineTo(canvas.width, canvas.height / 2);
-        canvasContext.stroke();
-
-        animationId = requestAnimationFrame(draw);
-      };
-
-      draw();
-    }
-
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, [analyser]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      width="600"
-      height="200"
-      style={{
-        display: "block",
-        margin: "20px auto",
-        border: "1px solid #ccc",
-      }}
-    ></canvas>
-  );
-}
-
-// AudioPlayer Component
-function AudioPlayer({ audioUrl }) {
-  return (
-    audioUrl && (
-      <div style={{ marginTop: "20px" }}>
-        <h3>Recorded Audio</h3>
-        <audio controls src={audioUrl}></audio>
-      </div>
-    )
-  );
-}
 
 // Main VoiceRecorder Component
 export default function VoiceRecorder() {
@@ -175,6 +22,8 @@ export default function VoiceRecorder() {
 
   const startRecording = async () => {
     console.log("startRecording");
+
+    audioChunksRef.current = []; // Reset audio chunks
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert("Your browser does not support audio recording.");
@@ -196,9 +45,8 @@ export default function VoiceRecorder() {
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         setAudioUrl(URL.createObjectURL(audioBlob));
-        audioChunksRef.current = [];
       };
-
+    
       const audioContext = new AudioContext();
       const analyser = audioContext.createAnalyser();
       const source = audioContext.createMediaStreamSource(stream);
@@ -278,7 +126,7 @@ export default function VoiceRecorder() {
       {/*ref.current is mutable. If the ref object isn't attached to a DOM node, read and write this value outside rendering. */}
       <CanvasVisualizer analyser={analyserRef.current} canvasRef={canvasRef} /> 
       <AudioPlayer audioUrl={audioUrl} />
-      {/* <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/webm" }) : null} /> */}
+      <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/webm" }) : null} />
     </div>
   );
 }

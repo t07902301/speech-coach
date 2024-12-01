@@ -2,37 +2,9 @@ import React, { useState, useRef } from "react";
 import Transcription from "./components/Transcription";
 import CanvasVisualizer from "./components/CanvasVisualizer";
 import TimerInput from "./components/TimerInput";
+import RecorderControls from "./components/RecorderControls";
+import AudioPlayer from "./components/AudioPlayer";
 
-
-// RecorderControls Component
-function RecorderControls({ isRecording, isPaused, onStart, onStop, onTogglePauseResume }) {
-  return (
-    <div>
-      <button onClick={onStart} disabled={isRecording}>
-        Start
-      </button>
-      <button onClick={onStop} disabled={!isRecording}>
-        Stop
-      </button>
-      <button onClick={onTogglePauseResume} disabled={!isRecording}>
-        {isPaused ? "Resume" : "Pause"}
-      </button>
-    </div>
-  );
-}
-
-
-// AudioPlayer Component
-function AudioPlayer({ audioUrl }) {
-  return (
-    audioUrl && (
-      <div style={{ marginTop: "20px" }}>
-        <h3>Recorded Audio</h3>
-        <audio controls src={audioUrl}></audio>
-      </div>
-    )
-  );
-}
 
 // Main VoiceRecorder Component
 export default function VoiceRecorder() {
@@ -137,7 +109,7 @@ export default function VoiceRecorder() {
 
   return (
     <div style={{ textAlign: "center", marginTop: "20px" }}>
-      <h2>Voice Recorder with Timer</h2>
+      <h2>Let's Practice!</h2>
       <TimerInput timerDuration={timerDuration} setTimerDuration={setTimerDuration} isRecording={isRecording} />
       <RecorderControls
         isRecording={isRecording}
