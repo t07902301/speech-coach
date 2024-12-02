@@ -52,7 +52,7 @@ function CanvasVisualizer({ analyser, canvasRef }) {
           cancelAnimationFrame(animationId);
         }
       };
-    }, [analyser]);
+    }, [analyser, canvasRef]);
   
     return (
       <canvas
