@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import SyncLoader from "react-spinners/SyncLoader";
 
 // Transcription Component
 function Transcription({ audioBlob }) {
     const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
 
     const [transcription, setTranscription] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const transcribeAudio = async () => {
         if (!audioBlob) {
@@ -14,6 +16,8 @@ function Transcription({ audioBlob }) {
         
         const formData = new FormData();
         formData.append("audio", audioBlob, "recording.webm");
+        setTranscription("Transcribing...");
+        setLoading(true);
 
         try {
             const response = await fetch(BACKEND_URL + "/transcribe", {
@@ -30,6 +34,9 @@ function Transcription({ audioBlob }) {
         } catch (error) {
             console.error("Error transcribing audio:", error);
             alert("Error transcribing audio.");
+            setTranscription("");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -38,11 +45,17 @@ function Transcription({ audioBlob }) {
             <button onClick={transcribeAudio} disabled={!audioBlob} style={styles.button}>
                 Transcribe Recording
             </button>
-            {transcription && (
-                <div style={styles.transcriptionContainer}>
-                    <h3 style={styles.heading}>Transcription</h3>
-                    <p style={styles.transcriptionText}>{transcription}</p>
+            {loading ? (
+                <div style={styles.loaderContainer}>
+                    <SyncLoader color={"#007BFF"} loading={loading} size={15} />
                 </div>
+            ) : (
+                transcription && (
+                    <div style={styles.transcriptionContainer}>
+                        <h3 style={styles.heading}>Transcription</h3>
+                        <p style={styles.transcriptionText}>{transcription}</p>
+                    </div>
+                )
             )}
         </div>
     );
@@ -68,6 +81,11 @@ const styles = {
         borderRadius: "4px",
         cursor: "pointer",
         fontSize: "16px",
+    },
+    loaderContainer: {
+        marginTop: "10px",
+        display: "flex",
+        justifyContent: "center",
     },
     transcriptionContainer: {
         marginTop: "10px",
