@@ -5,14 +5,13 @@ import TimerInput from "./components/TimerInput";
 import RecorderControls from "./components/RecorderControls";
 import AudioPlayer from "./components/AudioPlayer";
 
-
 // Main VoiceRecorder Component
 export default function VoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null); // For the optional timer
-  const [timerDuration, setTimerDuration] = useState(""); // User-input duration
+  const [timerDuration, setTimerDuration] = useState(30); // User-input duration
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioContextRef = useRef(null);
@@ -126,7 +125,11 @@ export default function VoiceRecorder() {
       {/*ref.current is mutable. If the ref object isn't attached to a DOM node, read and write this value outside rendering. */}
       <CanvasVisualizer analyser={analyserRef.current} canvasRef={canvasRef} /> 
       <AudioPlayer audioUrl={audioUrl} />
+      {/* <SendAudioButton audioUrl={audioUrl} />
+      <Transcription audioUrl={audioUrl} /> */}
       <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/webm" }) : null} />
+      {/* <SendAudioButton audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/webm" }) : null} /> */}
     </div>
   );
 }
+
