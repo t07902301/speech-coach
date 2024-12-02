@@ -3,9 +3,9 @@ FROM --platform=$BUILDPLATFORM python:3.8-alpine AS builder
 
 # Install FFmpeg
 # RUN apt-get update && apt-get install -y ffmpeg
-RUN apk update
-RUN apk upgrade
-RUN apk add --no-cache ffmpeg
+# RUN apk update
+# RUN apk upgrade
+# RUN apk add --no-cache ffmpeg
 
 WORKDIR /app
 
