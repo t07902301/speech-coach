@@ -1,24 +1,20 @@
 import os
+import tempfile
 from dotenv import load_dotenv
 from openai import OpenAI
-import tempfile
 from flask import Flask, abort, request, jsonify, render_template
 app = Flask(__name__)
-import wave
-import contextlib
-# from pydub import AudioSegment
-# from flask_cors import CORS
+from flask_cors import CORS
 
 # Set your OpenAI API key
 # Load environment variables from .env
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
-# cors = CORS(app, resources={r"/*": {"origins": "*"}})
+cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
-# from werkzeug.exceptions import HTTPException
+from flask import json
 
-# @app.errorhandler(HTTPException)
-def transcribe_voice(audio_location):
+def transcribe_voice(audio_location: str):
     client = OpenAI(api_key=API_KEY)
     audio_file= open(audio_location, "rb")
     try:
@@ -41,55 +37,42 @@ def text_to_speech_ai(api_response):
     response = client.audio.speech.create(model="tts-1",voice="nova",input=api_response)
     return response
 
-import ffmpeg
+@app.route('/save_audio', methods=['POST'])
+def save_audio_file():
+    if 'audio' not in request.files:
+        return jsonify({'error': 'No audio file provided'}), 400
+    audio_file = request.files['audio']
+    app.logger.info(audio_file.filename)
+    save_path = os.path.join('tests', 'audio', audio_file.filename)
+    audio_file.save(save_path)
+    return jsonify({'message': 'File saved successfully', 'file_path': save_path}), 200
+    
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok'})
+
+@app.route('/fake_transcribe', methods=['POST'])
+def fake_transcribe():
+    return jsonify({
+        'transcript': 'This is a fake transcript',
+    })
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
+    app.logger.info(request.content_type)
+    app.logger.info(request.files)
+
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
-
-    # Get the audio file from the request
+    audio_file = request.files['audio']
     audio_file = request.files['audio']
 
-    # Convert the uploaded audio file to WAV format using ffmpeg
-
     temp_input_audio_path = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.filename)[1])
-    app.logger.info(temp_input_audio_path.name)
     audio_file.save(temp_input_audio_path.name)
-    temp_converted_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    app.logger.info(temp_converted_audio_file.name)
-    
-    ffmpeg.input(temp_input_audio_path.name).output(temp_converted_audio_file.name, format='wav').overwrite_output().run()
 
-
-    # Transcribe the audio with OpenAI's Whisper API
-    transcript_response = transcribe_voice(temp_converted_audio_file.name)
-    app.logger.info(" get transcript_response")
-
-    # # Generate an inference/response based on the transcript
-    # response_text = chat_completion_call(transcript_response)
-    # app.logger.info(" get response_text")
-
-    # # Generate speech audio from the response
-    # audio_response = text_to_speech_ai(response_text)
-    # with open(f'static/audio/{gen_audio}', 'wb') as f:
-    #     f.write(audio_response.read())
-    # app.logger.info(" get audio_response")
-
-
-    # # Save the speech audio to a temporary file and return its URL
-    # temp_gen_audio_file = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
-    # with open(temp_gen_audio_file.name, 'wb') as f:
-    #     # Generate speech audio from the response text
-    #     f.write(audio_response.read())
-
-    # app.logger.info(" get temp_gen_audio_file")
-
-    return jsonify({
-        'transcript': transcript_response,
-        # 'responseText': response_text,
-        # 'audioUrl': gen_audio
-    })
+    transcript = transcribe_voice(temp_input_audio_path.name)
+    os.remove(temp_input_audio_path.name)
+    return jsonify({'transcript': transcript})
 
 @app.route('/get_revision', methods=['POST'])
 def get_response():

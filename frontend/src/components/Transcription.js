@@ -5,7 +5,6 @@ function Transcription({ audioBlob }) {
     const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
 
     const [transcription, setTranscription] = useState("");
-    console.log('audioBlob', audioBlob)
 
     const transcribeAudio = async () => {
         if (!audioBlob) {
@@ -14,10 +13,10 @@ function Transcription({ audioBlob }) {
         }
         
         const formData = new FormData();
-        formData.append("file", audioBlob, "recording.webm");
+        formData.append("audio", audioBlob, "recording.webm");
 
         try {
-            const response = await fetch(BACKEND_URL + "/fake_transcribe", {
+            const response = await fetch(BACKEND_URL + "/transcribe", {
                 method: "POST",
                 body: formData,
             });
