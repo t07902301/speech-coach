@@ -1,59 +1,64 @@
 # Language Tutor
 
-A virtua language tutor that helps you to work for English C1 level (coherence, cohesion, vocabulary/grammar, and pronounciation)!
+A virtual language tutor that helps you achieve English C1 level proficiency in coherence, cohesion, vocabulary/grammar, and pronunciation! 🌟
 
-## What can it do?
+## Features
 
-- [x] Replay your voice recordings
-- [x] Display refined versions from LLM 
-- [x] Timer to limit answer length 
-- [ ] Shadow reading
-- [ ] Pronounciation assessement
+- [x] Replay your voice recordings 🔁
+- [x] Display refined versions from LLM ✨
+- [x] Timer to limit answer length ⏲️
+- [ ] Shadow reading 📖
+- [ ] Pronunciation assessment 🗣️
 
+## Demo
 
-**Demo**
+![Demo Screenshot](app-demo.gif)
 
-![Demo Screenshot](app-demo.png)
-
-
-## How does it work? 
+## How It Works
 
 ### Frontend
 
- - [x] HTML/JS
- - [ ] React 
- - [ ] Better storage and speed
+- [x] HTML/JS 🌐
+- [x] React ⚛️
 
 ### Backend
- - [x] Flask
- - [ ] Java + Sprintbot
- - [ ] API design
- - [ ] Latency and scalability
+
+- [x] Flask 🐍
+- [ ] Java + Spring Boot ☕
+- [x] API design 📡
+- [ ] Database 🗄️
+- [ ] Message Queue and Redis for scalability 📬
 
 ### Model Endpoints
- - [x] OpenAI 
- - [ ] Deepgram for streaming 
- - [ ] self-hosted Models
+
+- [x] OpenAI 🤖
+- [ ] Self-hosted models 🏠
 
 ### Infrastructure
- - [x] Docker 
- - [ ] Cloud deployment 
 
-## How to use it?
+- [x] Docker 🐳
+- [ ] Cloud deployment ☁️
 
+## Usage
 
-1. Config `API_KEY` after `cp .env.example .env` and adding OpenAI API key.
+1. Configure `API_KEY` after copying the example environment file:
+    ```sh
+    cp .env.example .env
+    ```
+    Add your OpenAI API key to the `.env` file.
 
-2. Deploy in the root directory of this project. 
+2. Deploy the application from the root directory of this project:
+    ```sh
+    docker compose up -d --build
+    ```
+    Example output:
+    ```
+    [+] Building 1.4s (17/17) FINISHED
+     => [web internal] load build definition from Dockerfile                                     
 
-```
-$ docker compose up -d --build
-[+] Building 1.4s (17/17) FINISHED
- => [web internal] load build definition from Dockerfile                                     
+    [+] Running 2/2
+     ⠿ Network language-tutor_default  Created                                                                                       
+     ⠿ Container language-tutor-web-1  Started
+    ```
 
-[+] Running 2/2
- ⠿ Network language-tutor_default  Created                                                                                       
- ⠿ Container language-tutor-web-1  Started
-```
-
-2. Open http://localhost:8000/ 
+3. Open [http://localhost:8000](http://localhost:8000) in your browser. 🌐
