@@ -1,14 +1,30 @@
 services:
-  web: 
+  backend:
+    build: backend
+    command: ["flask", "run", "--host=0.0.0.0"]
     volumes:
-      - ./app:/app  # Bind mount the local 'app' directory to '/app' in the container
-    build:
-      context: app
-      target: builder
-    # flask requires SIGINT to stop gracefully
-    # (default stop signal from Compose is SIGTERM)
-    stop_signal: SIGINT
+      - ./backend:/backend
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
     ports:
-      - '8000:8000'
+      - "5000:5000"
     env_file:
-      - .env   # This will load the .env file into the container
+      - .env   
+
+  frontend:
+    build: frontend
+    command: ["npm", "start"]
+    volumes:
+      - ./frontend:/frontend
+      - node-modules:/frontend/node_modules
+    environment:
+      - NODE_ENV=development
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+
+volumes:
+  node-modules:
+
