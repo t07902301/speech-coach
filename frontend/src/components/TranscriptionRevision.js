@@ -31,7 +31,6 @@ function TranscriptionRevision({ transcript }) {
 
             const data = await response.json();
             setRevisedTranscript(data.revisedTranscript);
-            console.log(data.revisedTranscript);
         } catch (error) {
             console.error("Error revising transcript:", error);
             alert("Error revising transcript.");
