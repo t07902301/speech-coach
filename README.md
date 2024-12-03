@@ -51,14 +51,5 @@ A virtual language tutor that helps you achieve English C1 level proficiency in 
     ```sh
     docker compose up -d --build
     ```
-    Example output:
-    ```
-    [+] Building 1.4s (17/17) FINISHED
-     => [web internal] load build definition from Dockerfile                                     
 
-    [+] Running 2/2
-     ⠿ Network language-tutor_default  Created                                                                                       
-     ⠿ Container language-tutor-web-1  Started
-    ```
-
-3. Open [http://localhost:8000](http://localhost:8000) in your browser. 🌐
+3. Open [http://localhost:3000](http://localhost:3000) in your browser. 🌐
