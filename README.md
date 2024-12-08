@@ -1,6 +1,9 @@
 # Language Tutor
 
-A virtual language tutor that helps you achieve English C1 level proficiency in coherence, cohesion, vocabulary/grammar, and pronunciation! 🌟
+While preparing for English speaking tests, I noticed that most AI-powered speaking practice tools out there were too recreational, distracting, and overpriced. So, I decided to create my own tool that’s more personalized for people with different needs.
+
+Right now, it lets you review your voice recordings, transcribe your talks, and get those transcriptions polished with OpenAI's models. These features are super handy for English tests or even job interviews, since good fluency and clear content are usually all you need to shine in most situations. 🌟🗣️📚  
+
 
 ## Features
 
