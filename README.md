@@ -1,4 +1,4 @@
-# Language Tutor
+# Speech Tutor
 
 A virtual language tutor that helps you achieve English C1 level proficiency in coherence, cohesion, vocabulary/grammar, and pronunciation! 🌟
 
