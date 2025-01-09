@@ -107,9 +107,24 @@ export default function VoiceRecorder() {
           analyser.fftSize = 2048;
           analyserRef.current = analyser;
         }
+        // Resume the timer
+        if (remainingTime !== null) {
+          timerRef.current = setInterval(() => {
+            setRemainingTime((prevTime) => {
+              if (prevTime === 1) {
+                clearInterval(timerRef.current);
+                stopRecording();
+                return null;
+              }
+              return prevTime - 1;
+            });
+          }, 1000);
+        }
       } else {
         mediaRecorderRef.current.pause();
         analyserRef.current = null;
+        // Pause the timer
+        clearInterval(timerRef.current);
       }
       setIsPaused(!isPaused);
     }
