@@ -95,12 +95,21 @@ export default function VoiceRecorder() {
     setRemainingTime(null);
   };
 
-  const togglePauseResume = () => {
+  const togglePauseResume = async () => {
     if (mediaRecorderRef.current) {
       if (isPaused) {
         mediaRecorderRef.current.resume();
+        if (audioContextRef.current && analyserRef.current === null) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const source = audioContextRef.current.createMediaStreamSource(stream);
+          const analyser = audioContextRef.current.createAnalyser();
+          source.connect(analyser);
+          analyser.fftSize = 2048;
+          analyserRef.current = analyser;
+        }
       } else {
         mediaRecorderRef.current.pause();
+        analyserRef.current = null;
       }
       setIsPaused(!isPaused);
     }
