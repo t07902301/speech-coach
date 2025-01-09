@@ -1,4 +1,4 @@
-# Language Tutor
+# Speech Tutor
 
 While preparing for English speaking tests, I noticed that most AI-powered speaking practice tools out there were too recreational, distracting, and overpriced. So, I decided to create my own tool that’s more personalized for people with different needs.
 
