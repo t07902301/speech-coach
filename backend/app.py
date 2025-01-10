@@ -1,65 +1,46 @@
-import os
 import tempfile
-from dotenv import load_dotenv
-from openai import OpenAI
 from flask import Flask, abort, request, jsonify, render_template
 app = Flask(__name__)
 from flask_cors import CORS
+from utils import transcribe_voice, chat_completion_call, text_to_speech
+import os
 
-# Set your OpenAI API key
-# Load environment variables from .env
-load_dotenv()
-API_KEY = os.getenv('API_KEY')
 cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 from flask import json
 from werkzeug.exceptions import HTTPException
 
-def transcribe_voice(audio_location: str):
-    client = OpenAI(api_key=API_KEY)
-    audio_file= open(audio_location, "rb")
-    try:
-        transcript = client.audio.transcriptions.create(model="whisper-1", file=audio_file)
-        return transcript.text
-    except Exception as e:
-        raise Exception(str(e))
-
-def chat_completion_call(text):
-    client = OpenAI(api_key=API_KEY)
-    system_prompt = "You are an IELTS English tutor. Please refine a user's talk to make them sound more natural and grammarly correct."
-    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": text}]
-    try:
-        response = client.chat.completions.create(model="gpt-3.5-turbo-1106", messages=messages)
-        return response.choices[0].message.content
-    except Exception as e:
-        raise Exception(str(e))
-
-
-def text_to_speech_ai(api_response):
-    client = OpenAI(api_key=API_KEY)
-    response = client.audio.speech.create(model="tts-1",voice="nova",input=api_response)
-    return response
-
-@app.route('/transcribe', methods=['POST'])
+@app.route('/speeches/transcriptions', methods=['POST'])
 def transcribe():
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
     audio_file = request.files['audio']
-    audio_file = request.files['audio']
 
-    temp_input_audio_path = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.filename)[1])
-    audio_file.save(temp_input_audio_path.name)
+    temp_input_audio_path = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.filename)[1]) # Create a temporary file sharing the same extension as the input audio file
+    audio_file.save(temp_input_audio_path.name) # Save the FileStorage Object to the temporary file
 
-    transcript = transcribe_voice(temp_input_audio_path.name)
-    os.remove(temp_input_audio_path.name)
+    try:
+        transcript = transcribe_voice(temp_input_audio_path.name)
+    except Exception as e:
+        abort(500, str(e))
+    finally:
+        os.remove(temp_input_audio_path.name)
     return jsonify({'transcript': transcript})
 
-@app.route('/revise_transcript', methods=['POST'])
+@app.route('/speeches/revisions', methods=['POST'])
 def revise_transcript():
     data = request.get_json()
     response_text = chat_completion_call(data['transcript'])
     return jsonify({
         'revisedTranscript': response_text,
+    })
+
+@app.route('/speeches/generate/synthesis', methods=['POST'])
+def generate_speech():
+    data = request.get_json()
+    response = text_to_speech(data['text'])
+    return jsonify({
+        'audio': response.audio,
     })
 
 # Serve the audio file
@@ -99,7 +80,7 @@ def save_audio_file():
         return jsonify({'error': 'No audio file provided'}), 400
     audio_file = request.files['audio']
     app.logger.info(audio_file.filename)
-    save_path = os.path.join('tests', 'audio', audio_file.filename)
+    save_path = os.path.join('tests', 'audios', audio_file.filename)
     audio_file.save(save_path)
     return jsonify({'message': 'File saved successfully', 'file_path': save_path}), 200
     
