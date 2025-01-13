@@ -1,4 +1,5 @@
 import os
+import tempfile
 from dotenv import load_dotenv
 from openai import OpenAI
 import logging
@@ -18,9 +19,15 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 
 
-def speech_to_text(audio_location: str):
+def speech_to_text(audio: FileStorage):
     client = OpenAI(api_key=API_KEY)
-    audio_file = open(audio_location, "rb")
+    audio_path = tempfile.NamedTemporaryFile(
+        delete=False, suffix=os.path.splitext(audio.filename)[1]
+    ).name  # Create a temporary file sharing the same extension as the input audio file
+    audio.save(audio_path)  # Save the FileStorage Object to the temporary file
+
+    audio_file = open(audio_path, "rb")
+
     try:
         transcript = client.audio.transcriptions.create(
             model="whisper-1", file=audio_file
@@ -28,6 +35,8 @@ def speech_to_text(audio_location: str):
         return transcript.text
     except Exception as e:
         raise Exception(str(e))
+    finally:
+        os.remove(audio_path)
 
 
 def speech_to_text_timestamps(audio_location: str):
@@ -47,25 +56,29 @@ def speech_to_text_timestamps(audio_location: str):
 
 
 class TextRevision(BaseModel):
-    text: str
+    content: str
 
 
 # Function to encode the image
-def encode_image(image_path):
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
+def encode_image(image: FileStorage):
+    return base64.b64encode(image.stream.read()).decode("utf-8")
+    # with open(image_path, "rb") as image_file:
+    #     return base64.b64encode(image_file.read()).decode("utf-8")
 
 
-def text_to_text(text, img_url=None):
+def text_to_text(text, image: FileStorage = None, customized_prompt=None):
     client = OpenAI(api_key=API_KEY)
-    system_prompt = "You are an English tutor. Please refine a user's talk to make them sound more natural and grammarly correct."
-    if img_url is None:
+    if customized_prompt is None:
+        system_prompt = "You are an English tutor. Please refine a user's talk to make them sound more natural and grammarly correct."
+    else:
+        system_prompt = customized_prompt
+    if image is None:
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text},
         ]
     else:
-        base64_image = encode_image(img_url)
+        base64_image = encode_image(image)
         messages = [
             {"role": "system", "content": system_prompt},
             {
@@ -88,8 +101,9 @@ def text_to_text(text, img_url=None):
             max_tokens=300,
             response_format=TextRevision,
         )
-        return response.choices[0].message.parsed.text
+        return response.choices[0].message.parsed.content
     except Exception as e:
+        logger.info(response)
         raise Exception(str(e))
 
 def text_to_speech(input_text):

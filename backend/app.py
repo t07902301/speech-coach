@@ -49,25 +49,20 @@ def transcribe():
     audio = request.files["audio"]
     # audio_path = cache_audios(audio)
 
-    audio_path = tempfile.NamedTemporaryFile(
-        delete=False, suffix=os.path.splitext(audio.filename)[1]
-    ).name  # Create a temporary file sharing the same extension as the input audio file
-    audio.save(audio_path)  # Save the FileStorage Object to the temporary file
-
     try:
-        transcript = speech_to_text(audio_path)
+        transcript = speech_to_text(audio)
     except Exception as e:
         abort(500, str(e))
-    finally:
-        os.remove(audio_path)
     return jsonify({"transcript": transcript})
 
 
 @app.route("/speeches/revisions", methods=["POST"])
 def revise_transcript():
-    data = request.get_json()
+    image = None if "image" not in request.files else request.files["image"]
+    payload = request.files["payload"]
+    payload = json.loads(payload.read())
     try:
-        response_text = text_to_text(data["transcript"])
+        response_text = text_to_text(payload["transcript"], image, payload["customized_prompt"])
     except Exception as e:
         abort(500, str(e))
     return jsonify(
