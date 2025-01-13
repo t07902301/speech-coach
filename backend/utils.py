@@ -109,11 +109,11 @@ def text_to_text(text, image: FileStorage = None, customized_prompt=None):
 def text_to_speech(input_text):
     client = OpenAI(api_key=API_KEY)
     response = client.audio.speech.create(model="tts-1", voice="nova", input=input_text)
-    request_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    # TODO external database
-    audio_path = f"../database/audios/{request_timestamp}.wav"
-    response.write_to_file(audio_path)
-    logging.info(f"Generated audio file saved at {audio_path}")
+    # request_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    # audio_path = f"../database/audios/{request_timestamp}.wav"
+    # response.write_to_file(audio_path)
+    # logging.info(f"Generated audio file saved at {audio_path}")
+    return response.read()
 
 
 

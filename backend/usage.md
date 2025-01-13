@@ -46,27 +46,48 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/transc
 - **500 Internal Server Error:**
     - **JSON:** `{"error": "<error_message>"}`
 
-## Generate Speech Synthesis from Text
+## Predict Acoustic Scores
 
-**URL:** `/speeches/synthesis`  
+**URL:** `/speeches/acoustics_scores`  
 **Method:** `POST`
-This endpoint accepts a POST request with an audio file and returns the
-predicted acoustic score for the audio.
 
 ### Request
-- **URL:** `/speeches/acoustics_scores`
-- **Method:** `POST`
 - **Content-Type:** `multipart/form-data`
 - **Form Data:**
-    - `audio`: The audio file to be assessed.
+    - `audio`: The audio file for which the acoustic score is to be predicted.
 
 ### Responses
 - **200 OK:**
-    - **JSON:** `{"score": <predicted_score>}`
+    - **JSON:** `{"acousticScore": "<predicted_score>"}`
 - **500 Internal Server Error:**
     - **JSON:** `{"error": "<error_message>"}`
 
 ### Example
 ```sh
 curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/acoustics_scores
+```
+## Generate Speech Synthesis from Text
+
+**URL:** `/speeches/synthesis`  
+**Method:** `POST`
+
+### Request
+- **Content-Type:** `application/json`
+- **Body:**
+    ```json
+    {
+        "text": "string"  // The text to be converted to speech.
+    }
+    ```
+
+### Responses
+- **200 OK:**
+    - **Content-Type:** `audio/wav`
+    - **Body:** The generated audio data in WAV format.
+- **500 Internal Server Error:**
+    - **JSON:** `{"error": "<error_message>"}`
+
+### Example
+```sh
+curl -X POST -H "Content-Type: application/json" -d '{"text": "Hello, world!"}' http://<host>:<port>/speeches/synthesis --output output.wav
 ```

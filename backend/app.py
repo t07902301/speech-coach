@@ -76,15 +76,10 @@ def revise_transcript():
 def generate_speech():
     data = request.get_json()
     try:
-        text_to_speech(data["text"])
+        audio_data = text_to_speech(data["text"])
     except Exception as e:
         abort(500, str(e))
-    return jsonify(
-        {
-            "message": "Speech generated successfully",
-        }
-    )
-
+    return app.response_class(audio_data, mimetype='audio/wav')
 
 @app.route("/speeches/acoustics_scores", methods=["POST"])
 def predict_acoustics_scores():
