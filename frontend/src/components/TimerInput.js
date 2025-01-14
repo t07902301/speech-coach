@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+
 const styles = {
     container: {
         marginBottom: "10px",
@@ -21,18 +23,37 @@ const styles = {
 };
 
 function TimerInput({ timerDuration, setTimerDuration, isRecording }) {
+    const [useTimer, setUseTimer] = useState(false);
+
     return (
-        <div style={styles.container}>
-            <label style={styles.label}>
-                Set Timer (optional, in seconds):
-                <input
-                    type="number"
-                    value={timerDuration}
-                    onChange={(e) => setTimerDuration(Number(e.target.value))}
-                    disabled={isRecording}
-                    style={styles.input}
-                />
-            </label>
+        <div style={{ ...styles.container, position: "absolute", top: 0, left: 0 }}>
+            <button 
+                onClick={() => setUseTimer(!useTimer)}
+                style={{
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                    backgroundColor: useTimer ? "#f44336" : "#4CAF50",
+                    color: "#fff",
+                    cursor: "pointer",
+                    marginBottom: "10px",
+                }}
+            >
+                {useTimer ? 'Disable Timer' : 'Enable Timer'}
+            </button>    
+            {useTimer && (
+                <div>
+                    <label style={styles.label}>Set Timer (seconds):</label>
+                    <input
+                        type="number"
+                        value={timerDuration}
+                        onChange={(e) => setTimerDuration(Number(e.target.value))}
+                        disabled={isRecording}
+                        style={styles.input}
+                    />
+                </div>
+            )}                    
         </div>
     );
 }
