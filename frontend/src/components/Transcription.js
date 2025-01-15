@@ -4,7 +4,7 @@ import '../styles/Transcription.css';
 import TranscriptionRevision from './TranscriptionRevision';
 
 // Transcription Component
-function Transcription({ audioBlob }) {
+function Transcription({ audioBlob, image }) {
     const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
 
     const [transcription, setTranscription] = useState("");
@@ -17,12 +17,12 @@ function Transcription({ audioBlob }) {
         }
         
         const formData = new FormData();
-        formData.append("audio", audioBlob, "recording.webm");
+        formData.append("audio", audioBlob, "recording.wav");
         setTranscription("Transcribing...");
         setLoading(true);
 
         try {
-            const response = await fetch(BACKEND_URL + "/transcribe", {
+            const response = await fetch(BACKEND_URL + "/speeches/transcriptions", {
                 method: "POST",
                 body: formData,
             });
@@ -43,20 +43,21 @@ function Transcription({ audioBlob }) {
     };
 
     return (
-        <div className="container">
+        <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <button onClick={transcribeAudio} disabled={!audioBlob} className="button">
                 Transcribe Recording
             </button>
             {loading ? (
-                <div className="loaderContainer">
+                <div className="loaderContainer" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <SyncLoader color={"#007BFF"} loading={loading} size={15} />
                 </div>
             ) : (
                 transcription && (
-                    <div className="transcriptionContainer">
+                    <div className="transcriptionContainer" style={{ textAlign: 'center' }}>
                         <h3 className="heading">Transcription</h3>
                         <p className="transcriptionText">{transcription}</p>
-                        <TranscriptionRevision transcript={transcription} />
+                        <br />
+                        <TranscriptionRevision transcript={transcription} image={image}/>
                     </div>
                 )
             )}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import SyncLoader from "react-spinners/SyncLoader";
 import '../styles/Transcription.css';
 
-function TranscriptionRevision({ transcript }) {
+function TranscriptionRevision({ transcript, image}) {
     const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
 
     const [revisedTranscript, setRevisedTranscript] = useState("");
@@ -17,12 +17,18 @@ function TranscriptionRevision({ transcript }) {
         setLoading(true);
 
         try {
-            const response = await fetch(BACKEND_URL + "/revise_transcript", {
+            const prompt = document.querySelector(".promptInput").value;
+            const imageInput = image;
+            const formData = new FormData();
+
+            formData.append("payload", JSON.stringify({ transcript, customized_prompt: prompt }));
+            if (imageInput) {
+                formData.append("image", imageInput);
+            }
+
+            const response = await fetch(BACKEND_URL + "/speeches/revisions", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ transcript, key: "transcript" }),
+                body: formData,
             });
 
             if (!response.ok) {
@@ -30,6 +36,7 @@ function TranscriptionRevision({ transcript }) {
             }
 
             const data = await response.json();
+            console.log(data);
             setRevisedTranscript(data.revisedTranscript);
         } catch (error) {
             console.error("Error revising transcript:", error);
@@ -41,6 +48,15 @@ function TranscriptionRevision({ transcript }) {
 
     return (
         <div>
+            <div className="inputContainer">
+                <textarea
+                    placeholder="Enter your prompt here..."
+                    className="promptInput"
+                    rows="4"
+                    cols="50"
+                ></textarea>
+                {/* <input type="file" className="imageInput" accept="image/*" /> */}
+            </div>
             <button onClick={reviseTranscript} disabled={!transcript} className="button">
                 Revise Transcript
             </button>
@@ -57,6 +73,7 @@ function TranscriptionRevision({ transcript }) {
                 )
             )}
         </div>
+
     );
 }
 
