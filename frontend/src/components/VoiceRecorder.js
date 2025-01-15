@@ -5,7 +5,7 @@ import RecorderControls from "./RecorderControls";
 import AudioPlayer from "./AudioPlayer";
 
 // Main VoiceRecorder Component
-export default function VoiceRecorder({ setAudioBlob }) {
+export default function VoiceRecorder({ setAudioBlob, displayTimer}) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -133,7 +133,8 @@ export default function VoiceRecorder({ setAudioBlob }) {
   return (
     <div style={{ textAlign: "center", marginTop: "20px" }}>
       {/* <h2>Let's Practice</h2> */}
-      <TimerInput timerDuration={timerDuration} setTimerDuration={setTimerDuration} isRecording={isRecording} />
+      {displayTimer && <TimerInput timerDuration={timerDuration} setTimerDuration={setTimerDuration} isRecording={isRecording} />}
+      
       <RecorderControls
         isRecording={isRecording}
         isPaused={isPaused}
