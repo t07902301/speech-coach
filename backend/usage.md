@@ -58,7 +58,7 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/transc
 
 ### Responses
 - **200 OK:**
-    - **JSON:** `{"acousticScore": "<predicted_score>"}`
+    - **JSON:** `{"score": "<predicted_score>"}`
 - **500 Internal Server Error:**
     - **JSON:** `{"error": "<error_message>"}`
 
@@ -68,7 +68,7 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/acoust
 ```
 ## Generate Speech Synthesis from Text
 
-**URL:** `/speeches/synthesis`  
+**URL:** `/speeches/generate/synthesis`  
 **Method:** `POST`
 
 ### Request

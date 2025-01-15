@@ -1,13 +1,11 @@
 import React, { useState, useRef } from "react";
-import Transcription from "./components/Transcription";
-import CanvasVisualizer from "./components/CanvasVisualizer";
-import TimerInput from "./components/TimerInput";
-import RecorderControls from "./components/RecorderControls";
-import AudioPlayer from "./components/AudioPlayer";
-
+import CanvasVisualizer from "./CanvasVisualizer";
+import TimerInput from "./TimerInput";
+import RecorderControls from "./RecorderControls";
+import AudioPlayer from "./AudioPlayer";
 
 // Main VoiceRecorder Component
-export default function VoiceRecorder() {
+export default function VoiceRecorder({ setAudioBlob, displayTimer}) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -45,6 +43,7 @@ export default function VoiceRecorder() {
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         setAudioUrl(URL.createObjectURL(audioBlob));
+        setAudioBlob(audioBlob);
       };
     
       const audioContext = new AudioContext();
@@ -96,12 +95,36 @@ export default function VoiceRecorder() {
     setRemainingTime(null);
   };
 
-  const togglePauseResume = () => {
+  const togglePauseResume = async () => {
     if (mediaRecorderRef.current) {
       if (isPaused) {
         mediaRecorderRef.current.resume();
+        if (audioContextRef.current && analyserRef.current === null) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const source = audioContextRef.current.createMediaStreamSource(stream);
+          const analyser = audioContextRef.current.createAnalyser();
+          source.connect(analyser);
+          analyser.fftSize = 2048;
+          analyserRef.current = analyser;
+        }
+        // Resume the timer
+        if (remainingTime !== null) {
+          timerRef.current = setInterval(() => {
+            setRemainingTime((prevTime) => {
+              if (prevTime === 1) {
+                clearInterval(timerRef.current);
+                stopRecording();
+                return null;
+              }
+              return prevTime - 1;
+            });
+          }, 1000);
+        }
       } else {
         mediaRecorderRef.current.pause();
+        analyserRef.current = null;
+        // Pause the timer
+        clearInterval(timerRef.current);
       }
       setIsPaused(!isPaused);
     }
@@ -109,8 +132,9 @@ export default function VoiceRecorder() {
 
   return (
     <div style={{ textAlign: "center", marginTop: "20px" }}>
-      <h2>Voice Recorder with Timer</h2>
-      <TimerInput timerDuration={timerDuration} setTimerDuration={setTimerDuration} isRecording={isRecording} />
+      {/* <h2>Let's Practice</h2> */}
+      {displayTimer && <TimerInput timerDuration={timerDuration} setTimerDuration={setTimerDuration} isRecording={isRecording} />}
+      
       <RecorderControls
         isRecording={isRecording}
         isPaused={isPaused}
@@ -123,10 +147,9 @@ export default function VoiceRecorder() {
           Time Remaining: {remainingTime}s
         </div>
       )}
-      {/*ref.current is mutable. If the ref object isn't attached to a DOM node, read and write this value outside rendering. */}
       <CanvasVisualizer analyser={analyserRef.current} canvasRef={canvasRef} /> 
-      <AudioPlayer audioUrl={audioUrl} />
-      <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/webm" }) : null} />
+      <AudioPlayer audioUrl={audioUrl} audioCategory="Recorded Audio"/>
+      {/* <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/wav" }) : null} /> */}
     </div>
   );
 }

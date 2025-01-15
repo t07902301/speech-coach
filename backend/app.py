@@ -59,8 +59,8 @@ def transcribe():
 @app.route("/speeches/revisions", methods=["POST"])
 def revise_transcript():
     image = None if "image" not in request.files else request.files["image"]
-    payload = request.files["payload"]
-    payload = json.loads(payload.read())
+    payload = request.form["payload"]
+    payload = json.loads(payload)
     try:
         response_text = text_to_text(payload["transcript"], image, payload["customized_prompt"])
     except Exception as e:
