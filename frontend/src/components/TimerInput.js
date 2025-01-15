@@ -26,7 +26,7 @@ function TimerInput({ timerDuration, setTimerDuration, isRecording }) {
     const [useTimer, setUseTimer] = useState(false);
 
     return (
-        <div style={{ ...styles.container, position: "absolute", top: 0, left: 0 }}>
+        <div style={{ position: "absolute", top: "25%", left: 0, transform: "translateY(-25%)" }}>
             <button 
                 onClick={() => setUseTimer(!useTimer)}
                 style={{

@@ -147,7 +147,7 @@ export default function VoiceRecorder({ setAudioBlob }) {
         </div>
       )}
       <CanvasVisualizer analyser={analyserRef.current} canvasRef={canvasRef} /> 
-      <AudioPlayer audioUrl={audioUrl} />
+      <AudioPlayer audioUrl={audioUrl} audioCategory="Recorded Audio"/>
       {/* <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/wav" }) : null} /> */}
     </div>
   );

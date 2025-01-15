@@ -43,19 +43,20 @@ function Transcription({ audioBlob, image }) {
     };
 
     return (
-        <div className="container">
+        <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <button onClick={transcribeAudio} disabled={!audioBlob} className="button">
                 Transcribe Recording
             </button>
             {loading ? (
-                <div className="loaderContainer">
+                <div className="loaderContainer" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <SyncLoader color={"#007BFF"} loading={loading} size={15} />
                 </div>
             ) : (
                 transcription && (
-                    <div className="transcriptionContainer">
+                    <div className="transcriptionContainer" style={{ textAlign: 'center' }}>
                         <h3 className="heading">Transcription</h3>
                         <p className="transcriptionText">{transcription}</p>
+                        <br />
                         <TranscriptionRevision transcript={transcription} image={image}/>
                     </div>
                 )

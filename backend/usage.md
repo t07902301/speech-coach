@@ -68,7 +68,7 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/acoust
 ```
 ## Generate Speech Synthesis from Text
 
-**URL:** `/speeches/synthesis`  
+**URL:** `/speeches/generate/synthesis`  
 **Method:** `POST`
 
 ### Request

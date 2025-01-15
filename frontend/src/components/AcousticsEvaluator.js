@@ -27,7 +27,7 @@ const AcousticsEvaluator = ({audioData}) => {
     };
 
     return (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <button 
                 style={{ 
                     backgroundColor: '#4CAF50', 

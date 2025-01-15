@@ -6,13 +6,11 @@ const ImageOperator = ({ setImage }) => {
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
-        console.log("loading image");
         if (file) {
             setImage(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result);
-                console.log("image loaded");
             };
             reader.readAsDataURL(file);
         }
@@ -26,7 +24,7 @@ const ImageOperator = ({ setImage }) => {
     };
 
     return (
-        <div style={{ position: "absolute", top: 0, right: 0 }}>
+        <div style={{ position: "absolute", top: "25%", right: 0, transform: "translateY(-25%)" }}>
             <form>
                 <input 
                     type="file" 
