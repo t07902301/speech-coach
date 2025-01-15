@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import VoiceRecorder from './VoiceRecorder';
-import Transcription from "./Transcription";
-import ImageUploader from "./ImageUploader";
-
+import ImageOperator from "./ImageOperator";
+import Analyzer from "./Analyzer";
 const MainPage = () => {
     const [audioBlob, setAudioBlob] = useState();
     const [image, setImage] = useState(null);
     return (
         <div>
             <VoiceRecorder setAudioBlob={setAudioBlob}/> 
-            <ImageUploader setImage={setImage}/>
-            <Transcription audioBlob= {audioBlob} image={image}/>
-            
+            <ImageOperator setImage={setImage}/>
+            {/* <Transcription audioBlob= {audioBlob} image={image}/> */}
+            <Analyzer audioBlob={audioBlob} image={image}/>
         </div>
     );
 };

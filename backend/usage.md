@@ -58,7 +58,7 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/transc
 
 ### Responses
 - **200 OK:**
-    - **JSON:** `{"acousticScore": "<predicted_score>"}`
+    - **JSON:** `{"score": "<predicted_score>"}`
 - **500 Internal Server Error:**
     - **JSON:** `{"error": "<error_message>"}`
 
