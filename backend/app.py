@@ -87,6 +87,7 @@ def predict_acoustics_scores():
     try:
         score = acoustic_assess(request.files["audio"])
     except Exception as e:
+        app.logger.error(e)
         abort(500, str(e))
     return jsonify({"score": score})
 

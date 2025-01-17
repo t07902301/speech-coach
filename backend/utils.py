@@ -123,6 +123,7 @@ def acoustic_assess(audio: FileStorage) -> float:
 
     """
 
+    # url = "http://nlp:6000/assess"
     url = "http://localhost:6000/assess"
 
     headers = {}

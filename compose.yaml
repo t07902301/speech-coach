@@ -1,3 +1,4 @@
+name: speech-coach
 services:
   backend:
     build: backend
@@ -11,7 +12,10 @@ services:
       - "5000:5000"
     env_file:
       - .env   
-
+    depends_on:
+      - nlp
+    # networks:
+    #   - shared_network
   frontend:
     build: frontend
     command: ["npm", "start"]
@@ -24,7 +28,21 @@ services:
       - '3000:3000'
     depends_on:
       - backend
-
+    # networks:
+    #   - shared_network
+  nlp:
+    build: models/speech_assessment
+    command: ["flask", "run", "--host=0.0.0.0", "--port=6000", "--debug"]
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+    ports:
+      - "6000:6000"
+    # networks:
+    #   - shared_network
+# networks:
+#   shared_network:
+#     driver: bridge
 volumes:
   node-modules:
 
