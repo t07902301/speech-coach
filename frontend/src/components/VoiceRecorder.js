@@ -5,7 +5,9 @@ import RecorderControls from "./RecorderControls";
 import AudioPlayer from "./AudioPlayer";
 
 // Main VoiceRecorder Component
-export default function VoiceRecorder({ setAudioBlob, displayTimer}) {
+export default function VoiceRecorder({ setAudioBlob = () => {}, displayTimer = false }) {
+  // if setAudioBlob is not passed, it will be undefined
+  
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
