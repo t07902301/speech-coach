@@ -50,10 +50,10 @@ function TranscriptionRevision({ transcript, image}) {
         <div>
             <div className="inputContainer">
                 <textarea
-                    placeholder="Enter your prompt here..."
                     className="promptInput"
                     rows="4"
                     cols="50"
+                    defaultValue="You are an English coach. Please refine a user's talk to make them sound more natural and grammarly correct."
                 ></textarea>
                 {/* <input type="file" className="imageInput" accept="image/*" /> */}
             </div>
