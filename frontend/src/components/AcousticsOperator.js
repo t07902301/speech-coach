@@ -1,9 +1,8 @@
-import AcousticsEvaluator from "./AcousticsEvaluator";
 import React from 'react';
-const AcousticsOperator = ({ audioData }) => {
+const AcousticsOperator = ({ }) => {
     return (
-        <div className="acoustics-operator-container">
-            <AcousticsEvaluator audioData={audioData}/>
+        <div className="acoustics-operator-container" style={{ width: '100%', height: '100%' }}>
+            <button onClick={() => window.location.href = '/sample_reading'}>Improve My Vocal Quality</button>
         </div>
     );
 };
