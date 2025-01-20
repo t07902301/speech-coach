@@ -1,8 +1,9 @@
 import React from 'react';
-const AcousticsOperator = ({ }) => {
+import SpeechGenerator from './MainSpeechGenerator';
+const AcousticsOperator = ({transcription}) => {
     return (
         <div className="acoustics-operator-container" style={{ width: '100%', height: '100%' }}>
-            <button onClick={() => window.location.href = '/sample_reading'}>Improve My Vocal Quality</button>
+            <SpeechGenerator transcription={transcription}/>
         </div>
     );
 };

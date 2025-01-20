@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import SyncLoader from "react-spinners/SyncLoader";
 import '../styles/Transcription.css';
 import TranscriptionRevision from './TranscriptionRevision';
+import { useEffect } from 'react';
 
 // Transcription Component
-function Transcription({ audioBlob, image }) {
+function Transcription({ audioBlob, image, upliftTranscription = () => {} }) {
     const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
 
     const [transcription, setTranscription] = useState("");
     const [loading, setLoading] = useState(false);
-
+    useEffect(() => {
+        upliftTranscription(transcription);
+    }, [transcription]);
     const transcribeAudio = async () => {
         if (!audioBlob) {
             alert("No audio available for transcription.");
@@ -62,6 +65,7 @@ function Transcription({ audioBlob, image }) {
                 )
             )}
         </div>
+
     );
 }
 

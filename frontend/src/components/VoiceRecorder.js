@@ -5,9 +5,7 @@ import RecorderControls from "./RecorderControls";
 import AudioPlayer from "./AudioPlayer";
 
 // Main VoiceRecorder Component
-export default function VoiceRecorder({ setAudioBlob = () => {}, displayTimer = false }) {
-  // if setAudioBlob is not passed, it will be undefined
-  
+export default function VoiceRecorder({ upliftAudioBlob = () => {}, displayTimer = false }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -45,7 +43,7 @@ export default function VoiceRecorder({ setAudioBlob = () => {}, displayTimer = 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         setAudioUrl(URL.createObjectURL(audioBlob));
-        setAudioBlob(audioBlob);
+        upliftAudioBlob(audioBlob);
       };
     
       const audioContext = new AudioContext();

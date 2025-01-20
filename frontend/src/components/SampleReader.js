@@ -1,8 +1,7 @@
-import SpeechGenerator from "./SpeechGenerator";
+import SpeechGenerator from "./RandomSpeechGenerator";
 import VoiceRecorder from "./VoiceRecorder";
 import React from 'react';
 const SampleReader = () => {
-    // const [audioBlob, setAudioBlob] = useState(null);
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', height: '100vh', paddingTop: '20px' }}>
             <SpeechGenerator />
