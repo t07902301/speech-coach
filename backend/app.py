@@ -1,11 +1,9 @@
-import tempfile
 from flask import Flask, abort, request, jsonify, render_template
 from flask_cors import CORS
-from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio
+from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision
 
 from flask import json
 from werkzeug.exceptions import HTTPException
-import os
 app = Flask(__name__)
 
 
@@ -63,11 +61,13 @@ def revise_transcript():
     payload = json.loads(payload)
     try:
         response_text = text_to_text(payload["transcript"], image, payload["customized_prompt"])
+        revision_score = eval_revision(payload["transcript"], response_text)
     except Exception as e:
         abort(500, str(e))
     return jsonify(
         {
             "revisedTranscript": response_text,
+            "revisionScore": revision_score,
         }
     )
 

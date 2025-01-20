@@ -7,6 +7,7 @@ function TranscriptionRevision({ transcript, image}) {
 
     const [revisedTranscript, setRevisedTranscript] = useState("");
     const [loading, setLoading] = useState(false);
+    const [revisionScore, setRevisionScore] = useState(0);
 
     const reviseTranscript = async () => {
         if (!transcript) {
@@ -38,6 +39,7 @@ function TranscriptionRevision({ transcript, image}) {
             const data = await response.json();
             console.log(data);
             setRevisedTranscript(data.revisedTranscript);
+            setRevisionScore(data.revisionScore);
         } catch (error) {
             console.error("Error revising transcript:", error);
             alert("Error revising transcript.");
@@ -69,11 +71,11 @@ function TranscriptionRevision({ transcript, image}) {
                     <div className="transcriptionContainer">
                         <h3 className="heading">Revised Transcription</h3>
                         <p className="transcriptionText">{revisedTranscript}</p>
+                        <p className="revisionScore">Your Transcription Covers <strong>{revisionScore}</strong>% of the Revision. </p>
                     </div>
                 )
             )}
         </div>
-
     );
 }
 
