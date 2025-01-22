@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import AudioPlayer from "./AudioPlayer";
+import AcousticsVisual from './AcousticsVisual';
 
 const SpeechGenerator = ( {transcription = ""}) => {
-    const [audioUrl, setAudioUrl] = useState(null);
+    // const [audioUrl, setAudioUrl] = useState(null);
+    const [audioBlob, setAudioBlob] = useState(null);
     const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
     const [isLoading, setIsLoading] = useState(false);
-
     const generateSpeech = async () => {
         setIsLoading(true);
         try {
@@ -15,8 +15,8 @@ const SpeechGenerator = ( {transcription = ""}) => {
                 body: JSON.stringify({ text: transcription })
             });
             const data = await response.arrayBuffer();
-            const audioBlob = new Blob([data], { type: 'audio/wav' });
-            setAudioUrl(URL.createObjectURL(audioBlob));
+            setAudioBlob(new Blob([data], { type: 'audio/wav' }));
+            // setAudioUrl(URL.createObjectURL(audioBlob));
         } catch (error) {
             console.error('Error:', error);
         } finally {
@@ -34,14 +34,14 @@ const SpeechGenerator = ( {transcription = ""}) => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div>
             <button 
                 onClick={handleButtonClick} 
-                style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', location: 'center' }}
             >
                 {isLoading ? 'Loading...' : 'Sample Reading'}
             </button>
-            <AudioPlayer audioUrl={audioUrl} audioCategory="Sample Audio" />
+            <AcousticsVisual audioBlob={audioBlob} waveform_id="speech-synthesis"/>
         </div>
     );
 };

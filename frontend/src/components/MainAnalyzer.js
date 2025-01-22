@@ -14,7 +14,7 @@ const Analyzer = ({ audioBlob, image }) => {
                 <Transcription audioBlob={audioBlob} image={image} upliftTranscription={upliftTranscription} />
             </div>
             <div className="acoustics-operator-container" style={{ position: "absolute", right: 0}}>
-                <AcousticsOperator transcription={transcription}/>
+                <AcousticsOperator transcription={transcription} recordedBlob={audioBlob}/>
             </div>
         </div>
     );
