@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
-import AudioPlayer from "./AudioPlayer";
-
+import AcousticsVisual from './AcousticsVisual';
 const SpeechGenerator = () => {
     const [selectedText, setSelectedText] = useState('');
-    const [audioUrl, setAudioUrl] = useState(null);
+    const [audioBlob, setAudioBlob] = useState(null);
     const textAreaRef = useRef(null);
     const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
     const [isLoading, setIsLoading] = useState(false);
@@ -18,8 +17,7 @@ const SpeechGenerator = () => {
                 body: JSON.stringify({ text: textToSend })
             });
             const data = await response.arrayBuffer();
-            const audioBlob = new Blob([data], { type: 'audio/wav' });
-            setAudioUrl(URL.createObjectURL(audioBlob));
+            setAudioBlob(new Blob([data], { type: 'audio/wav' }));
         } catch (error) {
             console.error('Error:', error);
         } finally {
@@ -48,8 +46,8 @@ const SpeechGenerator = () => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', height: '100vh', width: '100%', paddingTop: '20px' }}>
-            <textarea ref={textAreaRef} onMouseUp={handleTextSelect} rows="10" cols="50" style={{ width: '80%' }} />
+        <div style={{ width: '80%' }}>
+            <textarea ref={textAreaRef} onMouseUp={handleTextSelect} rows="10" cols="50" style={{ width: '100%' }} />
             <br />
             <button onClick={handleButtonClick} style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
                 {isLoading ? 'Loading...' : 'Sample Reading'}
@@ -60,7 +58,8 @@ const SpeechGenerator = () => {
                     <strong>Selected Text:</strong> {selectedText}
                 </div>
             )}
-            <AudioPlayer audioUrl={audioUrl} audioCategory="Sample Audio" />
+            <AcousticsVisual audioBlob={audioBlob} waveform_id="random-speech-synthesis"/>
+            {/* <AudioPlayer audioUrl={audioUrl} audioCategory="Sample Audio" /> */}
         </div>
     );
 };
