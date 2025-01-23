@@ -55,8 +55,6 @@ const SampleRecorder = () => {
                   color: '#6A3274',
                 },
               }),
-            
-
             Hover.create({
               lineColor: '#ff0000',
               lineWidth: 2,

@@ -59,7 +59,6 @@ const SpeechGenerator = () => {
                 </div>
             )}
             <AcousticsVisual audioBlob={audioBlob} waveform_id="random-speech-synthesis"/>
-            {/* <AudioPlayer audioUrl={audioUrl} audioCategory="Sample Audio" /> */}
         </div>
     );
 };
