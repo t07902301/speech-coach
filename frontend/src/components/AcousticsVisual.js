@@ -55,7 +55,10 @@ const AcousticsVisual = ( { audioBlob, waveform_id } ) => {
           ],          
         });
       }
-    }, []);
+      if (audioBlob) {
+        waveform.current.loadBlob(audioBlob);
+      }
+    }, [audioBlob]);
 
     const playAudio = () => {
         // Check if the audio is already playing
@@ -66,11 +69,6 @@ const AcousticsVisual = ( { audioBlob, waveform_id } ) => {
         }
         };
 
-    useEffect(() => {
-        if (audioBlob) {
-            waveform.current.loadBlob(audioBlob);
-        }
-    }, [audioBlob]);
     return (
         <div className="visual-acoustics" style={{display: audioBlob? "block": "none"}}>
             <div id={contaienr_id}></div>
