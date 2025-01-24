@@ -2,25 +2,19 @@ from flask import Flask, abort, request, jsonify, render_template
 from flask_cors import CORS
 from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision
 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask import json
 from werkzeug.exceptions import HTTPException
 app = Flask(__name__)
 
 
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["2 per day"],
+)
 cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
-
-
-# cache = {}
-
-
-# def cache_audios(audio: FileStorage, dir: str = None) -> str:
-#     if audio.filename not in cache:
-#         save_path = os.path.join(dir, audio.filename)
-#         audio.save(save_path)
-#         cache[audio.filename] = save_path
-#     else:
-#         save_path = cache[audio.filename]
-#     return save_path
 
 
 @app.route("/speeches/audios", methods=["POST"])
@@ -74,7 +68,7 @@ def revise_transcript():
 
 @app.route("/speeches/generate/synthesis", methods=["POST"])
 def generate_speech():
-    data = request.get_json()
+    data = json.loads(request.data)
     try:
         audio_data = text_to_speech(data["text"])
     except Exception as e:
