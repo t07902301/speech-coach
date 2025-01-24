@@ -1,35 +1,36 @@
 import React, { useState, useRef } from 'react';
 import AcousticsVisual from './AcousticsVisual';
 const SpeechGenerator = () => {
-    const [selectedText, setSelectedText] = useState('');
     const [audioBlob, setAudioBlob] = useState(null);
     const textAreaRef = useRef(null);
     const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
     const [isLoading, setIsLoading] = useState(false);
+    const selectedTextRef = useRef('');
 
     const generateSpeech = async (textToSend) => {
         setIsLoading(true);
-        console.log('Start generating', isLoading);
         try {
             const response = await fetch(BACKEND_URL + '/speeches/generate/synthesis', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({ text: textToSend })
             });
+            if (!response.ok) {
+                throw new Error(response.statusText);
+            }
             const data = await response.arrayBuffer();
             setAudioBlob(new Blob([data], { type: 'audio/wav' }));
         } catch (error) {
-            console.error('Error:', error);
+            alert('Error generating speech: ' + error.message);
+            setAudioBlob(null);
         } finally {
             setIsLoading(false);
-            console.log('Generating finished', isLoading);
         }
     };
 
     const handleButtonClick = () => {
-        console.log('Click the button:', isLoading);
 
-        let textToSend = selectedText;
+        let textToSend = selectedTextRef.current;
         if (!textToSend && textAreaRef.current) { // If no text is selected, use the text from the textarea
             textToSend = textAreaRef.current.value;
         }
@@ -42,7 +43,7 @@ const SpeechGenerator = () => {
 
     const handleTextSelect = () => {
         const text = window.getSelection().toString();
-        setSelectedText(text);
+        selectedTextRef.current = text;
     };
 
     return (
@@ -53,11 +54,11 @@ const SpeechGenerator = () => {
                 {isLoading ? 'Loading...' : 'Sample Reading'}
             </button>
 
-            {selectedText && (
+            {/* {selectedTextRef.current && (
                 <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px', width: '80%' }}>
-                    <strong>Selected Text:</strong> {selectedText}
+                    <strong>Selected Text:</strong> {selectedTextRef.current}
                 </div>
-            )}
+            )} */}
             <AcousticsVisual audioBlob={audioBlob} waveform_id="random-speech-synthesis"/>
         </div>
     );

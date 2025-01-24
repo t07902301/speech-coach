@@ -11,14 +11,17 @@ const SpeechGenerator = ( {transcription = ""}) => {
         try {
             const response = await fetch(BACKEND_URL + '/speeches/generate/synthesis', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({ text: transcription })
             });
+            if (!response.ok) {
+                throw new Error(response.statusText);
+            }
             const data = await response.arrayBuffer();
             setAudioBlob(new Blob([data], { type: 'audio/wav' }));
-            // setAudioUrl(URL.createObjectURL(audioBlob));
         } catch (error) {
-            console.error('Error:', error);
+            alert('Error generating speech: ' + error.message);
+            setAudioBlob(null);
         } finally {
             setIsLoading(false);
         }
