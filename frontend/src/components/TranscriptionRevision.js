@@ -7,6 +7,7 @@ function TranscriptionRevision({ transcript, image}) {
 
     const [revisedTranscript, setRevisedTranscript] = useState("");
     const [loading, setLoading] = useState(false);
+    const [revisionScore, setRevisionScore] = useState(0);
 
     const reviseTranscript = async () => {
         if (!transcript) {
@@ -32,15 +33,16 @@ function TranscriptionRevision({ transcript, image}) {
             });
 
             if (!response.ok) {
-                throw new Error("Revision failed");
+                throw new Error(response.statusText);
             }
 
             const data = await response.json();
-            console.log(data);
             setRevisedTranscript(data.revisedTranscript);
+            setRevisionScore(data.revisionScore);
         } catch (error) {
-            console.error("Error revising transcript:", error);
-            alert("Error revising transcript.");
+            alert("Error revising transcript: " + error.message);
+            setRevisedTranscript("");
+            setRevisionScore(0);
         } finally {
             setLoading(false);
         }
@@ -50,15 +52,15 @@ function TranscriptionRevision({ transcript, image}) {
         <div>
             <div className="inputContainer">
                 <textarea
-                    placeholder="Enter your prompt here..."
                     className="promptInput"
                     rows="4"
                     cols="50"
+                    defaultValue="You are an English coach. Please refine a user's talk to make them sound more natural and grammarly correct."
                 ></textarea>
                 {/* <input type="file" className="imageInput" accept="image/*" /> */}
             </div>
             <button onClick={reviseTranscript} disabled={!transcript} className="button">
-                Revise Transcript
+                Revise Transcript 🪄
             </button>
             {loading ? (
                 <div className="loaderContainer">
@@ -69,11 +71,11 @@ function TranscriptionRevision({ transcript, image}) {
                     <div className="transcriptionContainer">
                         <h3 className="heading">Revised Transcription</h3>
                         <p className="transcriptionText">{revisedTranscript}</p>
+                        <p className="revisionScore"> ☑️ Your Transcription Covers <strong>{revisionScore}</strong>% of the Revision</p>
                     </div>
                 )
             )}
         </div>
-
     );
 }
 

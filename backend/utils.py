@@ -8,6 +8,8 @@ from pydantic import BaseModel
 import requests
 from werkzeug.datastructures import FileStorage
 from datetime import datetime
+from collections import Counter
+import string
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -131,7 +133,7 @@ def acoustic_assess(audio: FileStorage) -> float:
         "POST", url, headers=headers, files={"audio": (audio.filename, audio)}
     )
 
-    return round(response.json()["score"], 4)
+    return round(response.json()["score"], 2)
 
 
 def store_audio(audio: FileStorage) -> str:
@@ -142,3 +144,27 @@ def store_audio(audio: FileStorage) -> str:
     audio_path = f"../database/audios/{audio.filename}"
     audio.save(audio_path)
     return audio_path
+
+def eval_revision(transcript: str, revision: str) -> float:
+    """
+    Use ROUGE to calculate how many words in revision are in the transcription \n
+    """
+    # Remove punctuation from the transcript and revision
+    translator = str.maketrans('', '', string.punctuation)
+    transcript = transcript.translate(translator)
+    revision = revision.translate(translator)
+    # Convert both transcript and revision to lowercase
+    transcript = transcript.lower()
+    revision = revision.lower()
+    # Turn into unigrams
+    reference_words = revision.split()
+    candidate_words = transcript.split()
+
+    # Compute the number of overlapping words
+    reference_count = Counter(reference_words)
+    candidate_count = Counter(candidate_words)
+    overlap = sum(min(candidate_count[w], reference_count[w]) for w in candidate_count)
+    
+    # Compute precision, recall, and F1 score
+    recall = overlap / len(reference_words)
+    return round(recall* 100, 4)

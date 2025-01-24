@@ -1,13 +1,13 @@
 import React, { useState, useRef } from 'react';
 
-const ImageOperator = ({ setImage }) => {
+const ImageOperator = ({ upliftImage }) => {
     const [preview, setPreview] = useState(null);
     const fileInputRef = useRef(null);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setImage(file);
+            upliftImage(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result);
@@ -17,10 +17,9 @@ const ImageOperator = ({ setImage }) => {
     };
 
     const handleDeleteImage = () => {
-        setImage(null);
+        upliftImage(null);
         setPreview(null);
         fileInputRef.current.value = null;
-        console.log("image deleted");
     };
 
     return (
