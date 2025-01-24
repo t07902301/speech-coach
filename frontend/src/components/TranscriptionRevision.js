@@ -33,16 +33,16 @@ function TranscriptionRevision({ transcript, image}) {
             });
 
             if (!response.ok) {
-                throw new Error("Revision failed");
+                throw new Error(response.statusText);
             }
 
             const data = await response.json();
-            console.log(data);
             setRevisedTranscript(data.revisedTranscript);
             setRevisionScore(data.revisionScore);
         } catch (error) {
-            console.error("Error revising transcript:", error);
-            alert("Error revising transcript.");
+            alert("Error revising transcript: " + error.message);
+            setRevisedTranscript("");
+            setRevisionScore(0);
         } finally {
             setLoading(false);
         }
@@ -60,7 +60,7 @@ function TranscriptionRevision({ transcript, image}) {
                 {/* <input type="file" className="imageInput" accept="image/*" /> */}
             </div>
             <button onClick={reviseTranscript} disabled={!transcript} className="button">
-                Revise Transcript
+                Revise Transcript 🪄
             </button>
             {loading ? (
                 <div className="loaderContainer">
@@ -71,7 +71,7 @@ function TranscriptionRevision({ transcript, image}) {
                     <div className="transcriptionContainer">
                         <h3 className="heading">Revised Transcription</h3>
                         <p className="transcriptionText">{revisedTranscript}</p>
-                        <p className="revisionScore">Your Transcription Covers <strong>{revisionScore}</strong>% of the Revision. </p>
+                        <p className="revisionScore"> ☑️ Your Transcription Covers <strong>{revisionScore}</strong>% of the Revision</p>
                     </div>
                 )
             )}

@@ -31,14 +31,13 @@ function Transcription({ audioBlob, image, upliftTranscription = () => {} }) {
             });
 
             if (!response.ok) {
-                throw new Error("Transcription failed");
+                throw new Error(response.statusText);
             }
 
             const data = await response.json();
             setTranscription(data.transcript);
         } catch (error) {
-            console.error("Error transcribing audio:", error);
-            alert("Error transcribing audio.");
+            alert("Error transcribing audio: " + error.message);
             setTranscription("");
         } finally {
             setLoading(false);
