@@ -44,8 +44,9 @@ Right now, this app allows you to review your voice recordings, transcribe your 
 
 ## Usage
 
-1. Configure `API_KEY` after copying the example environment file:
+1. Configure `API_KEY` after copying the example environment file in the `backend` folder:
     ```sh
+    cd backend
     cp .env.example .env
     ```
     Add your OpenAI API key to the `.env` file.

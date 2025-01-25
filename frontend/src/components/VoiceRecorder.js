@@ -3,7 +3,7 @@ import CanvasVisualizer from "./CanvasVisualizer";
 import TimerInput from "./TimerInput";
 import RecorderControls from "./RecorderControls";
 import AudioPlayer from "./AudioPlayer";
-
+import logger from "../utils/logger";
 // Main VoiceRecorder Component
 export default function VoiceRecorder({ upliftAudioBlob = () => {}, displayTimer = false }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -19,8 +19,7 @@ export default function VoiceRecorder({ upliftAudioBlob = () => {}, displayTimer
   const timerRef = useRef(null); // Ref for the countdown timer
 
   const startRecording = async () => {
-    console.log("startRecording");
-
+    logger.log("startRecording");
     audioChunksRef.current = []; // Reset audio chunks
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -73,7 +72,7 @@ export default function VoiceRecorder({ upliftAudioBlob = () => {}, displayTimer
         }, 1000);
       }
     } catch (error) {
-      console.error("Error accessing microphone:", error);
+      logger.error("Error accessing microphone:", error);
     }
   };
 

@@ -6,8 +6,7 @@ import { useEffect } from 'react';
 
 // Transcription Component
 function Transcription({ audioBlob, image, upliftTranscription = () => {} }) {
-    const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
-
+    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
     const [transcription, setTranscription] = useState("");
     const [loading, setLoading] = useState(false);
     useEffect(() => {

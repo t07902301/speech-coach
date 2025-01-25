@@ -1,0 +1,33 @@
+name: tutor-dev
+services:
+  backend:
+    build: backend
+    command: ["flask", "run", "--host=0.0.0.0"]
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+      - FLASK_DEBUG=1
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - backend/.env 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 2
+  frontend:
+    build: 
+      context: frontend
+      dockerfile: Dockerfile.dev
+    env_file:
+      - frontend/.env.development
+    ports:
+      - "3000:3000"
+    command: ["npm", "start"]
+    volumes:
+      - ./frontend:/frontend
+    depends_on:
+      - backend

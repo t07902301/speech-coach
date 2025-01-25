@@ -46,7 +46,7 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/transc
 - **500 Internal Server Error:**
     - **JSON:** `{"error": "<error_message>"}`
 
-## Predict Acoustic Scores
+## Predict Acoustic Scores (Deprecated)
 
 **URL:** `/speeches/acoustics_scores`  
 **Method:** `POST`
@@ -72,7 +72,7 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/acoust
 **Method:** `POST`
 
 ### Request
-- **Content-Type:** `application/json`
+- **Content-Type:** `text/plain`
 - **Body:**
     ```json
     {
