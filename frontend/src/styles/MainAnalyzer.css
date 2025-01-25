@@ -1,0 +1,25 @@
+.analyzer-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+}
+
+.transcription-container,
+.acoustics-operator-container {
+    width: 45%;
+    margin-bottom: 20px;
+}
+
+.transcription-container {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.acoustics-operator-container {
+    background-color: #e0e0e0;
+    padding: 10px;
+    border-radius: 5px;
+}

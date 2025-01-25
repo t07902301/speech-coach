@@ -1,105 +1,118 @@
-import os
-import tempfile
-from dotenv import load_dotenv
-from openai import OpenAI
 from flask import Flask, abort, request, jsonify, render_template
-app = Flask(__name__)
 from flask_cors import CORS
+from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision
 
-# Set your OpenAI API key
-# Load environment variables from .env
-load_dotenv()
-API_KEY = os.getenv('API_KEY')
-cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
-
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask import json
 from werkzeug.exceptions import HTTPException
+app = Flask(__name__)
 
-def transcribe_voice(audio_location: str):
-    client = OpenAI(api_key=API_KEY)
-    audio_file= open(audio_location, "rb")
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["2 per day"],
+)
+cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
+
+@app.route("/speeches/audios", methods=["POST"])
+def save_audio():
+    if "audio" not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+    audio = request.files["audio"]
     try:
-        transcript = client.audio.transcriptions.create(model="whisper-1", file=audio_file)
-        return transcript.text
+        audio_path = store_audio(audio)
     except Exception as e:
-        raise Exception(str(e))
-
-def chat_completion_call(text):
-    client = OpenAI(api_key=API_KEY)
-    system_prompt = "You are an IELTS English tutor. Please refine a user's talk to make them sound more natural and grammarly correct."
-    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": text}]
-    try:
-        response = client.chat.completions.create(model="gpt-3.5-turbo-1106", messages=messages)
-        return response.choices[0].message.content
-    except Exception as e:
-        raise Exception(str(e))
+        abort(500, str(e))
+    # app.logger.info(audio.filename)
+    # # save_path = cache_audios(audio, '../api_tests/audios')
+    # # TODO external database
+    # audio_path = os.path.join('../api_tests/audios', audio.filename)
+    # audio.save(audio_path)
+    return jsonify({"message": "File saved successfully", "file_path": audio_path}), 200
 
 
-def text_to_speech_ai(api_response):
-    client = OpenAI(api_key=API_KEY)
-    response = client.audio.speech.create(model="tts-1",voice="nova",input=api_response)
-    return response
-
-@app.route('/transcribe', methods=['POST'])
+@app.route("/speeches/transcriptions", methods=["POST"])
 def transcribe():
-    if 'audio' not in request.files:
-        return jsonify({'error': 'No audio file provided'}), 400
-    audio_file = request.files['audio']
-    audio_file = request.files['audio']
+    if "audio" not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+    audio = request.files["audio"]
+    # audio_path = cache_audios(audio)
 
-    temp_input_audio_path = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.filename)[1])
-    audio_file.save(temp_input_audio_path.name)
+    try:
+        transcript = speech_to_text(audio)
+    except Exception as e:
+        abort(500, str(e))
+    return jsonify({"transcript": transcript})
 
-    transcript = transcribe_voice(temp_input_audio_path.name)
-    os.remove(temp_input_audio_path.name)
-    return jsonify({'transcript': transcript})
 
-@app.route('/revise_transcript', methods=['POST'])
+@app.route("/speeches/revisions", methods=["POST"])
 def revise_transcript():
-    data = request.get_json()
-    response_text = chat_completion_call(data['transcript'])
-    return jsonify({
-        'revisedTranscript': response_text,
-    })
+    image = None if "image" not in request.files else request.files["image"]
+    payload = request.form["payload"]
+    payload = json.loads(payload)
+    try:
+        response_text = text_to_text(payload["transcript"], image, payload["customized_prompt"])
+        revision_score = eval_revision(payload["transcript"], response_text)
+    except Exception as e:
+        abort(500, str(e))
+    return jsonify(
+        {
+            "revisedTranscript": response_text,
+            "revisionScore": revision_score,
+        }
+    )
 
-# Serve the audio file
-@app.route('/audio/<filename>')
-def serve_audio(filename):
-    return app.send_static_file(f"audio/{filename}")
 
-@app.route('/', methods=['GET'])
+@app.route("/speeches/generate/synthesis", methods=["POST"])
+def generate_speech():
+    data = json.loads(request.data)
+    try:
+        audio_data = text_to_speech(data["text"])
+    except Exception as e:
+        abort(500, str(e))
+    return app.response_class(audio_data, mimetype='audio/wav')
+
+@app.route("/speeches/acoustics_scores", methods=["POST"])
+def predict_acoustics_scores():
+    # audio_path = cache_audios(request.files['audio'])
+    try:
+        score = acoustic_assess(request.files["audio"])
+    except Exception as e:
+        abort(500, str(e))
+    return jsonify({"score": score})
+
+
+@app.route("/", methods=["GET"])
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
-    
-@app.route('/health', methods=['GET'])
+
+@app.route("/health", methods=["GET"])
 def health():
-    return jsonify({'status': 'ok'})
+    return jsonify({"status": "ok"})
 
-@app.route('/fake_transcribe', methods=['POST'])
+
+@app.route("/fake_transcribe", methods=["POST"])
 def fake_transcribe():
-    return jsonify({
-        'transcript': 'This is a fake transcript',
-    })
+    return jsonify(
+        {
+            "transcript": "This is a fake transcript",
+        }
+    )
+
 
 @app.errorhandler(HTTPException)
 def handle_exception(e):
     response = e.get_response()
-    response.data = json.dumps({
-        "code": e.code,
-        "name": e.name,
-        "description": e.description,
-    })
+    response.data = json.dumps(
+        {
+            "code": e.code,
+            "name": e.name,
+            "description": e.description,
+        }
+    )
     response.content_type = "application/json"
     return response
-
-@app.route('/save_audio', methods=['POST'])
-def save_audio_file():
-    if 'audio' not in request.files:
-        return jsonify({'error': 'No audio file provided'}), 400
-    audio_file = request.files['audio']
-    app.logger.info(audio_file.filename)
-    save_path = os.path.join('tests', 'audio', audio_file.filename)
-    audio_file.save(save_path)
-    return jsonify({'message': 'File saved successfully', 'file_path': save_path}), 200
-    

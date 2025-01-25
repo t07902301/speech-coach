@@ -1,11 +1,11 @@
 // AudioPlayer Component
-function AudioPlayer({ audioUrl }) {
+function AudioPlayer({ audioUrl, audioCategory}) {
     return (
       audioUrl && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Recorded Audio</h3>
-          <audio controls src={audioUrl}></audio>
-        </div>
+      <div style={{ marginTop: "20px", textAlign: "center" }}>
+      <h3>{audioCategory}</h3>
+      <audio controls src={audioUrl}></audio>
+      </div>
       )
     );
   }
