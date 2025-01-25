@@ -2,11 +2,12 @@ import Transcription from "./Transcription";
 import AcousticsOperator from "./AcousticsOperator";
 import React from "react";
 import "../styles/MainAnalyzer.css";
+import logger from "../utils/logger";
 const Analyzer = ({ audioBlob, image }) => {
     const [transcription, setTranscription] = React.useState("");
     const upliftTranscription = (transcription) => {
         setTranscription(transcription);
-        console.log("Transcription uplifted to Analyzer: ", transcription);
+        logger.log("Transcription uplifted to Analyzer: ", transcription);
     }
     return (
         <div className="analyzer-container" >

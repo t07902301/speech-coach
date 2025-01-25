@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
-
+import logger from "../utils/logger";
 // CanvasVisualizer Component
 function CanvasVisualizer({ analyser, canvasRef }) {
 
     useEffect(() => {
       let animationId;
       if (analyser && canvasRef.current) {
-        console.log('ready to draw')
+        logger.log("ready to draw");
         const canvas = canvasRef.current;
         const canvasContext = canvas.getContext("2d");
         // const analyser = analyserRef.current;
