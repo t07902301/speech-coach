@@ -1,5 +1,10 @@
 name: tutor-dev
 services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    expose:
+      - "6379"
   backend:
     build: backend
     command: ["flask", "run", "--host=0.0.0.0"]
@@ -7,17 +12,18 @@ services:
       - FLASK_ENV=development
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
+      - ALLOWED_ORIGINS=http://localhost:3000
     ports:
       - "5000:5000"
     volumes:
       - ./backend:/backend
     env_file:
       - backend/.env 
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 2
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+    #   interval: 1h
+    #   timeout: 10s
+    #   retries: 3
   frontend:
     build: 
       context: frontend

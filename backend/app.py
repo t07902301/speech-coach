@@ -9,11 +9,11 @@ from flask import json
 from werkzeug.exceptions import HTTPException
 app = Flask(__name__)
 
-
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["2 per day"],
+    default_limits=["10 per day"],
+    storage_uri="redis://redis:6379",
 )
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS")
