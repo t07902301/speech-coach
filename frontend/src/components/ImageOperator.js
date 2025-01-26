@@ -7,6 +7,15 @@ const ImageOperator = ({ upliftImage }) => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Only image files are allowed!');
+                return;
+            }
+
+            if (file.size > 1024 * 1024) {
+                alert('File size should not exceed 1MB!');
+                return;
+            }
             upliftImage(file);
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -24,12 +33,14 @@ const ImageOperator = ({ upliftImage }) => {
 
     return (
         <div style={{ position: "absolute", top: "25%", right: 0, transform: "translateY(-25%)" }}>
-            <form>
+            <form style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <label>Wanna Describe a Picture?</label>
                 <input 
                     type="file" 
                     accept="image/*" 
                     onChange={handleImageChange} 
                     ref={fileInputRef} 
+                    style={{ marginTop: '5px' }}
                 />
             </form>
             {preview && (
@@ -39,8 +50,8 @@ const ImageOperator = ({ upliftImage }) => {
                     style={{ 
                         display: 'block', 
                         marginTop: '10px', 
-                        maxWidth: '100px', 
-                        maxHeight: '100px' 
+                        maxWidth: '200px', 
+                        maxHeight: '200px' 
                     }}
                 />
             )}
