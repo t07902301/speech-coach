@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import AcousticsVisual from './AcousticsVisual';
 const SpeechGenerator = () => {
+    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
     const [audioBlob, setAudioBlob] = useState(null);
     const textAreaRef = useRef(null);
-    const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
     const [isLoading, setIsLoading] = useState(false);
     const selectedTextRef = useRef('');
 

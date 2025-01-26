@@ -1,3 +1,4 @@
+import os
 from flask import Flask, abort, request, jsonify, render_template
 from flask_cors import CORS
 from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision
@@ -14,10 +15,12 @@ limiter = Limiter(
     app=app,
     default_limits=["2 per day"],
 )
-cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
+allowed_origins = os.getenv("ALLOWED_ORIGINS")
+cors = CORS(app, resources={r"/*": {"origins": allowed_origins}})
 
 
-@app.route("/speeches/audios", methods=["POST"])
+@app.route("/api/speeches/audios", methods=["POST"])
 def save_audio():
     if "audio" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -34,7 +37,7 @@ def save_audio():
     return jsonify({"message": "File saved successfully", "file_path": audio_path}), 200
 
 
-@app.route("/speeches/transcriptions", methods=["POST"])
+@app.route("/api/speeches/transcriptions", methods=["POST"])
 def transcribe():
     if "audio" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -48,7 +51,7 @@ def transcribe():
     return jsonify({"transcript": transcript})
 
 
-@app.route("/speeches/revisions", methods=["POST"])
+@app.route("/api/speeches/revisions", methods=["POST"])
 def revise_transcript():
     image = None if "image" not in request.files else request.files["image"]
     payload = request.form["payload"]
@@ -66,7 +69,7 @@ def revise_transcript():
     )
 
 
-@app.route("/speeches/generate/synthesis", methods=["POST"])
+@app.route("/api/speeches/generate/synthesis", methods=["POST"])
 def generate_speech():
     data = json.loads(request.data)
     try:
@@ -75,7 +78,7 @@ def generate_speech():
         abort(500, str(e))
     return app.response_class(audio_data, mimetype='audio/wav')
 
-@app.route("/speeches/acoustics_scores", methods=["POST"])
+@app.route("/api/speeches/acoustics_scores", methods=["POST"])
 def predict_acoustics_scores():
     # audio_path = cache_audios(request.files['audio'])
     try:
@@ -85,12 +88,12 @@ def predict_acoustics_scores():
     return jsonify({"score": score})
 
 
-@app.route("/", methods=["GET"])
+@app.route("/api/", methods=["GET"])
 def index():
     return render_template("index.html")
 
 
-@app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
 

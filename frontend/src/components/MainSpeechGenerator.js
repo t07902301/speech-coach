@@ -3,8 +3,8 @@ import AcousticsVisual from './AcousticsVisual';
 
 const SpeechGenerator = ( {transcription = ""}) => {
     // const [audioUrl, setAudioUrl] = useState(null);
+    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
     const [audioBlob, setAudioBlob] = useState(null);
-    const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
     const [isLoading, setIsLoading] = useState(false);
     const generateSpeech = async () => {
         setIsLoading(true);
