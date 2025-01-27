@@ -7,6 +7,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import json
 from werkzeug.exceptions import HTTPException
+import redis
 app = Flask(__name__)
 
 limiter = Limiter(
@@ -16,8 +17,7 @@ limiter = Limiter(
     storage_uri="redis://redis:6379",
 )
 
-allowed_origins = os.getenv("ALLOWED_ORIGINS")
-cors = CORS(app, resources={r"/*": {"origins": allowed_origins}})
+cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://speech-learning-fun.org/"]}})
 
 
 @app.route("/api/speeches/audios", methods=["POST"])
