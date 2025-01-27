@@ -48,6 +48,7 @@ const SpeechGenerator = () => {
 
     return (
         <div style={{ width: '80%' }}>
+            <p>Enter the text you'd like to practice reading.</p>
             <textarea ref={textAreaRef} onMouseUp={handleTextSelect} rows="10" cols="50" style={{ width: '100%' }} />
             <br />
             <button onClick={handleButtonClick} style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
