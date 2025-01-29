@@ -7,7 +7,7 @@ function RecorderControls({ isRecording, isPaused, onStart, onStop, onTogglePaus
     return (
       <div className="recorder-controls">
         <button className="recorder-button" onClick={onStart} disabled={isRecording}>
-          Start
+          Start Recording
         </button>
         <button className="recorder-button" onClick={onStop} disabled={!isRecording}>
           Stop

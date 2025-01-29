@@ -14,10 +14,10 @@ limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=["10 per day"],
-    storage_uri="redis://redis:6379",
+    storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
 )
 
-cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://speech-learning-fun.org/"]}})
+cors = CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "*")}})
 
 
 @app.route("/api/speeches/audios", methods=["POST"])

@@ -1,4 +1,5 @@
-name: tutor-prod
+# Staging: run local containers for tests
+name: tutor-staging
 services:
   redis:
     image: redis:latest
@@ -10,7 +11,7 @@ services:
       - backend/.env 
     environment:
       - FLASK_ENV=production
-      - ALLOWED_ORIGINS=https://speech-learning-fun.org
+      - ALLOWED_ORIGINS=http://localhost:3000
       - REDIS_URL=redis://redis:6379
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost/api/health"]
@@ -27,14 +28,11 @@ services:
       - frontend/.env.production
 
   nginx:
-    build:
+    build: 
       context: nginx
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.staging
     ports:
       - "80:80"
-    volumes:
-      - /etc/ssl/certs:/etc/ssl/certs
-      - /etc/ssl/private:/etc/ssl/private
     depends_on:
       - backend
       - frontend

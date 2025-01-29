@@ -1,10 +1,11 @@
+# Before using Nginx, we need local tests but may not neeed to be in docker. 
 name: tutor-dev
 services:
   redis:
     image: redis:latest
     container_name: redis
-    expose:
-      - "6379"
+    ports:
+      - "6379:6379"
   backend:
     build: backend
     command: ["flask", "run", "--host=0.0.0.0"]
@@ -13,6 +14,7 @@ services:
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
       - ALLOWED_ORIGINS=http://localhost:3000
+      - REDIS_URL=redis://localhost:6379
     ports:
       - "5000:5000"
     volumes:
