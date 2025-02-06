@@ -119,18 +119,17 @@ def text_to_speech(input_text):
 
 
 
-def acoustic_assess(audio: FileStorage) -> float:
+def acoustic_assess(query_audio: FileStorage, ref_audio: FileStorage) -> float:
     """
-    Use the NISQA model to predict human judgement of the audio quality. \n
-
+    Get the similarity score between two audio files. \n
     """
-
-    url = "http://localhost:6000/assess"
+    url = "http://localhost:6000/api/similarity_scores"
 
     headers = {}
 
     response = requests.request(
-        "POST", url, headers=headers, files={"audio": (audio.filename, audio)}
+        "POST", url, headers=headers, \
+        files= {'query_audio': (query_audio.filename, query_audio), 'reference_audio': (ref_audio.filename, ref_audio)}
     )
 
     return round(response.json()["score"], 2)

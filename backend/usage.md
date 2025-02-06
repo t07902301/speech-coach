@@ -46,7 +46,7 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/transc
 - **500 Internal Server Error:**
     - **JSON:** `{"error": "<error_message>"}`
 
-## Predict Acoustic Scores (Deprecated)
+## Predict Acoustic Scores
 
 **URL:** `/speeches/acoustics_scores`  
 **Method:** `POST`
@@ -54,7 +54,8 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/transc
 ### Request
 - **Content-Type:** `multipart/form-data`
 - **Form Data:**
-    - `audio`: The audio file for which the acoustic score is to be predicted.
+    - `query_audio`: User's recordings.
+    - `reference_audio`: Generated audios. 
 
 ### Responses
 - **200 OK:**
