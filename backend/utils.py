@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Load environment variables from .env
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
-
+ACOUSTIC_URL = os.getenv("ACOUSTIC_URL", "http://localhost:6000")
 
 def speech_to_text(audio: FileStorage):
     client = OpenAI(api_key=API_KEY)
@@ -123,8 +123,10 @@ def acoustic_assess(query_audio: FileStorage, ref_audio: FileStorage) -> float:
     """
     Get the similarity score between two audio files. \n
     """
-    url = "http://localhost:6000/api/similarity_scores"
-
+    # url = "http://localhost:6000/api/similarity_scores"
+    # url = "http://speech_assessment-models-1:6000/api/similarity_scores"
+    url = f"{ACOUSTIC_URL}/api/similarity_scores"
+    logger.info(url)
     headers = {}
 
     response = requests.request(
