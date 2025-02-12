@@ -17,7 +17,7 @@ limiter = Limiter(
     storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
 )
 
-cors = CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "*")}})
+cors = CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")}})
 
 
 @app.route("/api/speeches/audios", methods=["POST"])

@@ -7,4 +7,5 @@ COPY requirements.txt /backend/requirements.txt
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 COPY . .
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
+EXPOSE 5000
+# CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
