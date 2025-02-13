@@ -16,7 +16,7 @@ services:
       - FLASK_ENV=production
       - ALLOWED_ORIGINS=http://localhost:3000
       - REDIS_URL=redis://redis:6379
-      - ACOUSTIC_URL=http://speech_assessment-models-1:6000
+      - ACOUSTIC_URL=http://speech_assessment_prod-models-1:6000
     networks:
       - speech-coach-backend
       - speech-coach-frontend

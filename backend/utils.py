@@ -126,7 +126,6 @@ def acoustic_assess(query_audio: FileStorage, ref_audio: FileStorage) -> float:
     # url = "http://localhost:6000/api/similarity_scores"
     # url = "http://speech_assessment-models-1:6000/api/similarity_scores"
     url = f"{ACOUSTIC_URL}/api/similarity_scores"
-    logger.info(url)
     headers = {}
 
     response = requests.request(

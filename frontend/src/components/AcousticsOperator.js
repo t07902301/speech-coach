@@ -43,11 +43,11 @@ const AcousticsOperator = ({transcription, recordedBlob}) => {
             <SpeechGenerator transcription={transcription} upliftGeneratedBlob={upliftGeneratedBlob}/>
             {GeneratedBlob && distance === null && (
                 <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: '20px', fontWeight: 'bold' }}>Calculating the difference between your recording and sample reading ...</p>
+                    <p style={{ fontSize: '20px', fontWeight: 'bold' }}>Calculating the acoustic score ...</p>
                 </div>
             )}
             {distance !== null && (
-                <p style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold' }}> Difference: {distance} </p>
+                <p style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold' }}> Acoustic Score out of 100: {100 - distance} </p>
             )}
         </div>
     );
