@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import AcousticsVisual from './AcousticsVisual';
 
-const SpeechGenerator = ( {transcription = ""}) => {
-    // const [audioUrl, setAudioUrl] = useState(null);
+const SpeechGenerator = ( {transcription = "", upliftGeneratedBlob = () => {} }) => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
     const [audioBlob, setAudioBlob] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +17,9 @@ const SpeechGenerator = ( {transcription = ""}) => {
                 throw new Error(response.statusText);
             }
             const data = await response.arrayBuffer();
-            setAudioBlob(new Blob([data], { type: 'audio/wav' }));
+            let GeneratedBlob = new Blob([data], { type: 'audio/wav' });
+            setAudioBlob(GeneratedBlob);
+            upliftGeneratedBlob(GeneratedBlob);
         } catch (error) {
             alert('Error generating speech: ' + error.message);
             setAudioBlob(null);

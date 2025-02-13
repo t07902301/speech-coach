@@ -5,14 +5,23 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+    networks:
+      - speech-coach-backend
   backend:
     build: backend
+    command: ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
     env_file:
       - backend/.env 
     environment:
       - FLASK_ENV=production
       - ALLOWED_ORIGINS=http://localhost:3000
       - REDIS_URL=redis://redis:6379
+      - ACOUSTIC_URL=http://speech_assessment_prod-models-1:6000
+    networks:
+      - speech-coach-backend
+      - speech-coach-frontend
+    depends_on:
+      - redis
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost/api/health"]
     #   interval: 30s
@@ -26,7 +35,8 @@ services:
       dockerfile: Dockerfile.prod
     env_file:
       - frontend/.env.production
-
+    networks:
+      - speech-coach-frontend
   nginx:
     build: 
       context: nginx
@@ -36,3 +46,10 @@ services:
     depends_on:
       - backend
       - frontend
+    networks:
+      - speech-coach-frontend
+networks:
+  speech-coach-backend:
+    name: speech-coach-backend
+  speech-coach-frontend:
+    name: speech-coach-frontend

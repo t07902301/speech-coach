@@ -75,7 +75,7 @@ const SampleRecorder = () => {
       const link = document.createElement('a');
       Object.assign(link, {
         href: recordedUrl,
-        download: 'recording.' + blob.type.split(';')[0].split('/')[1] || 'webm',
+        download: 'recording.wav',
         textContent: 'Download recording',
       });
       container.appendChild(link);

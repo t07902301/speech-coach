@@ -17,7 +17,7 @@ limiter = Limiter(
     storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
 )
 
-cors = CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "*")}})
+cors = CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")}})
 
 
 @app.route("/api/speeches/audios", methods=["POST"])
@@ -82,7 +82,7 @@ def generate_speech():
 def predict_acoustics_scores():
     # audio_path = cache_audios(request.files['audio'])
     try:
-        score = acoustic_assess(request.files["audio"])
+        score = acoustic_assess(request.files["query_audio"], request.files["reference_audio"])
     except Exception as e:
         abort(500, str(e))
     return jsonify({"score": score})
