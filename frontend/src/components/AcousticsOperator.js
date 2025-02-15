@@ -10,7 +10,10 @@ const AcousticsOperator = ({transcription, recordedBlob}) => {
     }
     const [distance, setDistance] = React.useState(null);
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-
+    console.log('Init...');
+    console.log('recordedBlob:', recordedBlob);
+    console.log('GeneratedBlob:', GeneratedBlob);
+    console.log('distance:', distance);
     React.useEffect(() => {
         if (recordedBlob && GeneratedBlob) {
             const formData = new FormData();
@@ -32,6 +35,10 @@ const AcousticsOperator = ({transcription, recordedBlob}) => {
                 .catch((error) => {
                     alert("Error comparing audio: " + error.message);
                 });
+                console.log('In Progress...');
+                console.log('recordedBlob:', recordedBlob);
+                console.log('GeneratedBlob:', GeneratedBlob);
+                console.log('distance:', distance);
         }
     }, [recordedBlob, GeneratedBlob]);
 
@@ -49,8 +56,6 @@ const AcousticsOperator = ({transcription, recordedBlob}) => {
             {distance !== null && (
                 <p style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold' }}> Acoustic Score out of 100: {100 - distance} </p>
             )}
-            console.log('GeneratedBlob:', GeneratedBlob);
-            console.log('distance:', distance);
         </div>
     );
 };
