@@ -49,6 +49,8 @@ const AcousticsOperator = ({transcription, recordedBlob}) => {
             {distance !== null && (
                 <p style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold' }}> Acoustic Score out of 100: {100 - distance} </p>
             )}
+            console.log('GeneratedBlob:', GeneratedBlob);
+            console.log('distance:', distance);
         </div>
     );
 };
