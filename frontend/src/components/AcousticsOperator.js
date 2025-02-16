@@ -10,37 +10,33 @@ const AcousticsOperator = ({transcription, recordedBlob}) => {
     }
     const [distance, setDistance] = React.useState(null);
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-    console.log('Init...');
-    console.log('recordedBlob:', recordedBlob);
-    console.log('GeneratedBlob:', GeneratedBlob);
-    console.log('distance:', distance);
-    React.useEffect(() => {
-        if (recordedBlob && GeneratedBlob) {
-            const formData = new FormData();
-            formData.append("query_audio", recordedBlob, "recording.wav");
-            formData.append("reference_audio", GeneratedBlob, "generated.wav");
-            fetch(BACKEND_URL + "/speeches/acoustics_scores", {
-                method: "POST",
-                body: formData,
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(response.statusText);
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    setDistance(data.score);
-                })
-                .catch((error) => {
-                    alert("Error comparing audio: " + error.message);
-                });
-                console.log('In Progress...');
-                console.log('recordedBlob:', recordedBlob);
-                console.log('GeneratedBlob:', GeneratedBlob);
-                console.log('distance:', distance);
-        }
-    }, [recordedBlob, GeneratedBlob]);
+    // React.useEffect(() => {
+    //     if (recordedBlob && GeneratedBlob) {
+    //         const formData = new FormData();
+    //         formData.append("query_audio", recordedBlob, "recording.wav");
+    //         formData.append("reference_audio", GeneratedBlob, "generated.wav");
+    //         fetch(BACKEND_URL + "/speeches/acoustics_scores", {
+    //             method: "POST",
+    //             body: formData,
+    //         })
+    //             .then((response) => {
+    //                 if (!response.ok) {
+    //                     throw new Error(response.statusText);
+    //                 }
+    //                 return response.json();
+    //             })
+    //             .then((data) => {
+    //                 setDistance(data.score);
+    //             })
+    //             .catch((error) => {
+    //                 alert("Error comparing audio: " + error.message);
+    //             });
+    //             console.log('In Progress...');
+    //             console.log('recordedBlob:', recordedBlob);
+    //             console.log('GeneratedBlob:', GeneratedBlob);
+    //             console.log('distance:', distance);
+    //     }
+    // }, [recordedBlob, GeneratedBlob]);
 
     return (
         <div style={{ width: '100%', height: '100%' }}>
