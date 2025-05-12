@@ -2,6 +2,7 @@ import os
 from flask import Flask, abort, request, jsonify, render_template
 from flask_cors import CORS
 from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision
+import random
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -78,6 +79,7 @@ def generate_speech():
         abort(500, str(e))
     return app.response_class(audio_data, mimetype='audio/wav')
 
+
 @app.route("/api/speeches/acoustics_scores", methods=["POST"])
 def predict_acoustics_scores():
     # audio_path = cache_audios(request.files['audio'])
@@ -86,6 +88,14 @@ def predict_acoustics_scores():
     except Exception as e:
         abort(500, str(e))
     return jsonify({"score": score})
+
+@app.route("/api/sample-questions", methods=["GET"])
+def sample_questions():
+    sample_questions = [ 
+        "What kind of TV programmes do you like to watch?", 
+        "Do you like reading books? Why?"
+    ]
+    return jsonify({"question":sample_questions[random.randint(0, len(sample_questions)-1)]})
 
 
 @app.route("/api/", methods=["GET"])
