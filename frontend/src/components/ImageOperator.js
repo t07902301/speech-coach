@@ -32,9 +32,9 @@ const ImageOperator = ({ upliftImage }) => {
     };
 
     return (
-        <div style={{ position: "absolute", top: "25%", right: 0, transform: "translateY(-25%)" }}>
+        <div className='image-operator'>
             <form style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <label>Wanna Describe a Picture?</label>
+                <label> Describe a Picture </label>
                 <input 
                     type="file" 
                     accept="image/*" 
