@@ -30,7 +30,7 @@ const SpeechGenerator = ( {transcription = "", upliftGeneratedBlob = () => {} })
 
     const handleButtonClick = () => {
         if (transcription.length === 0) {
-            alert('No transcription available.');
+            alert('No transcription for sample reading');
             return;
         } else {
             generateSpeech();
@@ -38,7 +38,7 @@ const SpeechGenerator = ( {transcription = "", upliftGeneratedBlob = () => {} })
     };
 
     return (
-        <div>
+        <div className='speech-generator'>
             <button 
                 onClick={handleButtonClick} 
                 style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', location: 'center' }}

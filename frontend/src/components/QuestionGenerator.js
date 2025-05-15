@@ -14,10 +14,11 @@ function QuestionGenerator (){
                 const data = await response.json();
                 setQuestion(data.question);
             } else {
-                console.error('Failed to fetch question');
+                throw new Error(response.statusText);
             }
         } catch (error) {
-            console.error('Error fetching question:', error);
+            alert('Error fetching question:' + error.message);
+            console.error('Error fetching question:' + error.message);
         }
         setLoading(false);
     }
