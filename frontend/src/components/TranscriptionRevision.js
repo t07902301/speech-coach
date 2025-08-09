@@ -3,8 +3,7 @@ import SyncLoader from "react-spinners/SyncLoader";
 import '../styles/Transcription.css';
 
 function TranscriptionRevision({ transcript, image}) {
-    const BACKEND_URL = "http://localhost:5000"; // Replace with your backend URL
-
+    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
     const [revisedTranscript, setRevisedTranscript] = useState("");
     const [loading, setLoading] = useState(false);
     const [revisionScore, setRevisionScore] = useState(0);

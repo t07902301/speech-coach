@@ -75,7 +75,7 @@ const SampleRecorder = () => {
       const link = document.createElement('a');
       Object.assign(link, {
         href: recordedUrl,
-        download: 'recording.' + blob.type.split(';')[0].split('/')[1] || 'webm',
+        download: 'recording.wav',
         textContent: 'Download recording',
       });
       container.appendChild(link);
@@ -184,9 +184,9 @@ return (
         Record
       </button>      
     </div>
-    <div id="progress" style={{ margin: '10px 0' }}>{progress}</div>
+    <div id="progress" style={{ margin: '10px 0' }}>Recording Time: {progress}</div>
     <br />
-    <div id="mic" style={{ width: '100%', height: '30%', borderStyle:'dotted' }}></div>
+    <div id="mic" style={{ width: '100%', height: '50%'}}></div>
     <div id="recordings" style={{ width: '100%', height: '30%' }}></div>
 
 

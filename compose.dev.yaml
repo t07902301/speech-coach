@@ -1,5 +1,13 @@
+# Before using Nginx, we need local tests but may not neeed to be in docker. 
 name: tutor-dev
 services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - speech-coach-backend
   backend:
     build: backend
     command: ["flask", "run", "--host=0.0.0.0"]
@@ -7,17 +15,25 @@ services:
       - FLASK_ENV=development
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
+      - ALLOWED_ORIGINS=http://localhost:3000
+      - REDIS_URL=redis://redis:6379
+      - ACOUSTIC_URL=http://speech_assessment-models-1:6000
     ports:
       - "5000:5000"
     volumes:
       - ./backend:/backend
     env_file:
       - backend/.env 
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 2
+    networks:
+      - speech-coach-backend
+      - speech-coach-frontend
+    depends_on:
+      - redis
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+    #   interval: 1h
+    #   timeout: 10s
+    #   retries: 3
   frontend:
     build: 
       context: frontend
@@ -31,3 +47,10 @@ services:
       - ./frontend:/frontend
     depends_on:
       - backend
+    networks:
+      - speech-coach-frontend
+networks:
+  speech-coach-backend:
+    name: speech-coach-backend
+  speech-coach-frontend:
+    name: speech-coach-frontend

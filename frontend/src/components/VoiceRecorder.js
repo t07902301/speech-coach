@@ -130,8 +130,7 @@ export default function VoiceRecorder({ upliftAudioBlob = () => {}, displayTimer
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "20px" }}>
-      {/* <h2>Let's Practice</h2> */}
+    <div className="voice-recorder" style={{ textAlign: "center", marginTop: "20px" }}>
       {displayTimer && <TimerInput timerDuration={timerDuration} setTimerDuration={setTimerDuration} isRecording={isRecording} />}
       
       <RecorderControls
@@ -148,7 +147,6 @@ export default function VoiceRecorder({ upliftAudioBlob = () => {}, displayTimer
       )}
       <CanvasVisualizer analyser={analyserRef.current} canvasRef={canvasRef} /> 
       <AudioPlayer audioUrl={audioUrl} audioCategory="Recorded Audio"/>
-      {/* <Transcription audioBlob={audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: "audio/wav" }) : null} /> */}
     </div>
   );
 }

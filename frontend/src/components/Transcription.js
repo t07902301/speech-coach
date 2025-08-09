@@ -14,7 +14,7 @@ function Transcription({ audioBlob, image, upliftTranscription = () => {} }) {
     }, [transcription]);
     const transcribeAudio = async () => {
         if (!audioBlob) {
-            alert("No audio available for transcription.");
+            alert("Record before transcribing");
             return;
         }
         
@@ -45,7 +45,7 @@ function Transcription({ audioBlob, image, upliftTranscription = () => {} }) {
 
     return (
         <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <button onClick={transcribeAudio} disabled={!audioBlob} className="button">
+            <button onClick={transcribeAudio} className="button">
                 Transcribe Recording
             </button>
             {loading ? (

@@ -1,23 +1,27 @@
+import os
 from flask import Flask, abort, request, jsonify, render_template
 from flask_cors import CORS
 from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision
+import random
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import json
 from werkzeug.exceptions import HTTPException
+import redis
 app = Flask(__name__)
-
 
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["2 per day"],
+    default_limits=["10 per day"],
+    storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
 )
-cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
+cors = CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")}})
 
 
-@app.route("/speeches/audios", methods=["POST"])
+@app.route("/api/speeches/audios", methods=["POST"])
 def save_audio():
     if "audio" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -34,7 +38,7 @@ def save_audio():
     return jsonify({"message": "File saved successfully", "file_path": audio_path}), 200
 
 
-@app.route("/speeches/transcriptions", methods=["POST"])
+@app.route("/api/speeches/transcriptions", methods=["POST"])
 def transcribe():
     if "audio" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -48,7 +52,7 @@ def transcribe():
     return jsonify({"transcript": transcript})
 
 
-@app.route("/speeches/revisions", methods=["POST"])
+@app.route("/api/speeches/revisions", methods=["POST"])
 def revise_transcript():
     image = None if "image" not in request.files else request.files["image"]
     payload = request.form["payload"]
@@ -66,7 +70,7 @@ def revise_transcript():
     )
 
 
-@app.route("/speeches/generate/synthesis", methods=["POST"])
+@app.route("/api/speeches/generate/synthesis", methods=["POST"])
 def generate_speech():
     data = json.loads(request.data)
     try:
@@ -75,22 +79,31 @@ def generate_speech():
         abort(500, str(e))
     return app.response_class(audio_data, mimetype='audio/wav')
 
-@app.route("/speeches/acoustics_scores", methods=["POST"])
+
+@app.route("/api/speeches/acoustics_scores", methods=["POST"])
 def predict_acoustics_scores():
     # audio_path = cache_audios(request.files['audio'])
     try:
-        score = acoustic_assess(request.files["audio"])
+        score = acoustic_assess(request.files["query_audio"], request.files["reference_audio"])
     except Exception as e:
         abort(500, str(e))
     return jsonify({"score": score})
 
+@app.route("/api/sample-questions", methods=["GET"])
+def sample_questions():
+    sample_questions = [ 
+        "What kind of TV programmes do you like to watch?", 
+        "Do you like reading books? Why?"
+    ]
+    return jsonify({"question":sample_questions[random.randint(0, len(sample_questions)-1)]})
 
-@app.route("/", methods=["GET"])
+
+@app.route("/api/", methods=["GET"])
 def index():
     return render_template("index.html")
 
 
-@app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
 
