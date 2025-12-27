@@ -79,7 +79,7 @@ def transcribe_audio_clip():
     
     try:
         transcript_clips = clip_speech_to_text(audio_file)
-        return jsonify(transcript_clips.model_dump(mode="json")), 200
+        return jsonify({"clips": transcript_clips}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
