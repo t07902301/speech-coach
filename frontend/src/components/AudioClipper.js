@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 const AudioClipper = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null); // URL for the player
-  const [transcriptionData, setTranscriptionData] = useState(null);
+  const [transcriptionClips, setTranscriptionClips] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   
   const audioRef = useRef(null); // Reference to the audio element
@@ -16,7 +16,7 @@ const AudioClipper = () => {
       setSelectedFile(file);
       // Create a local URL so the browser can play the file before/after upload
       setAudioUrl(URL.createObjectURL(file)); 
-      setTranscriptionData(null);
+      setTranscriptionClips(null);
     }
   };
 
@@ -40,7 +40,7 @@ const AudioClipper = () => {
         alert(`Error ${response.status}: ${errorMessage}`); // Or set an error state
         throw new Error(`Error ${response.status}: ${errorMessage}`)
       }
-      setTranscriptionData(data.clips);
+      setTranscriptionClips(data.clips);
     } catch (err) {
       console.error("Upload failed", err);
     } finally {
@@ -94,10 +94,10 @@ const AudioClipper = () => {
         {isLoading ? 'Processing...' : 'Transcribe & Clip'}
       </button>
 
-      {transcriptionData && (
+      {transcriptionClips && (
         <div style={styles.results}>
           <h3>Clips (Click to Play)</h3>
-          {transcriptionData.map((segment, index) => (
+          {transcriptionClips.map((segment, index) => (
             <div key={index} style={styles.segmentCard}>
               <div style={styles.segmentHeader}>
                 <span style={styles.timeLabel}>
