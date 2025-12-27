@@ -1,7 +1,7 @@
 import os
 from flask import Flask, abort, request, jsonify, render_template
 from flask_cors import CORS
-from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision
+from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision, clip_speech_to_text
 import random
 
 from flask_limiter import Limiter
@@ -69,7 +69,20 @@ def revise_transcript():
         }
     )
 
+@app.route('/api/speeches/transcription_clips', methods=['POST'])
+def transcribe_audio_clip():
+    # 1. Check if the file is part of the request
+    if 'audio' not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
 
+    audio_file = request.files['audio']
+    
+    try:
+        transcript_clips = clip_speech_to_text(audio_file)
+        return jsonify({"clips": transcript_clips}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 @app.route("/api/speeches/generate/synthesis", methods=["POST"])
 def generate_speech():
     data = json.loads(request.data)

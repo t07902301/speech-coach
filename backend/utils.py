@@ -7,9 +7,9 @@ import base64
 from pydantic import BaseModel
 import requests
 from werkzeug.datastructures import FileStorage
-from datetime import datetime
 from collections import Counter
 import string
+from typing import List
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +40,27 @@ def speech_to_text(audio: FileStorage):
     finally:
         os.remove(audio_path)
 
+def clip_speech_to_text(audio: FileStorage) -> List[dict]:
+    client = OpenAI(api_key=API_KEY)
+    audio_path = tempfile.NamedTemporaryFile(
+        delete=False, suffix=os.path.splitext(audio.filename)[1]
+    ).name  # Create a temporary file sharing the same extension as the input audio file
+    audio.save(audio_path)  # Save the FileStorage Object to the temporary file
+
+    audio_file = open(audio_path, "rb")
+
+    try:
+        transcript_clips = client.audio.transcriptions.create(
+            file=audio_file,
+            model="whisper-1",
+            response_format="verbose_json",
+            timestamp_granularities=["segment"]
+        )
+        return [segment.model_dump() if hasattr(segment, 'model_dump') else segment for segment in transcript_clips.segments]
+    except Exception as e:
+        raise Exception(str(e))
+    finally:
+        os.remove(audio_path)
 
 def speech_to_text_timestamps(audio_location: str):
     client = OpenAI(api_key=API_KEY)

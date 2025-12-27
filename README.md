@@ -1,21 +1,27 @@
 # Speech Coach
 
-While preparing for English speaking tests, I noticed that most existing AI-powered tools were too recreational, distracting, and overpriced. So, I decided to create a simple but powerful alternative for people who want to improve their speech skills more efficiently. 
+While preparing for English and French speaking tests, I noticed that most existing AI-powered tools were too recreational, distracting, and overpriced. So, I decided to create a simple and practical alternative for people who want to improve their speech skills. 
 
-Right now, this app allows you to review your voice recordings, transcribe your talks, and get those transcriptions polished with OpenAI's models. These features are super handy for English tests and even job interviews, since good fluency and clear content are usually all you need to shine with your talks! 🌟🗣️📚  
-
+Right now, this app allows you to transcribe your voice recordings, polish transcriptions with OpenAI's models, evaluate the acoustic quality, and learn from real/synthetic audios. These features are super handy for any language learning and any other speech scenarios, like job interviews, since good fluency and clear content are usually all you need to shine while you talk! 🌟🗣️📚  
 
 ## Features
 
 - [x] Replay your voice recordings 🔁
 - [x] Display refined versions from LLM ✨
 - [x] Timer to limit speech length ⏲️
-- [ ] Shadow reading 📖
-- [ ] Pronunciation assessment 💯
-- [ ] Multilingual 🌍
+- [x] Shadow reading 📖 of Any Audio, Any Text you like!
+- [x] Acoustic assessment 💯 based on a sample audio. 
+- [x] Multilingual 🌍 for English, French and more to come. 
+
 ## Demo
 
-![Demo Screenshot](app-demo.gif)
+1. Record yourself and have the recording transcribed. You can also evaluate the acoustics quality of your recordings by comparing it to a synthetic audio generated from the same transcription. 
+<!-- ![Recording Transcription Screenshot](readme-images/recording-transcription.gif) -->
+<img src="readme-images/recording-transcription.gif" width="400">
+
+2. Shadow reading on any audio you chose or a syntectic one generated from any text content you like!
+<!-- ![Audio Clip Screenshot](readme-images/audio-clips.png) -->
+<img src="readme-images/audio-clips.png" width="400">
 
 ## How It Works
 
@@ -27,7 +33,6 @@ Right now, this app allows you to review your voice recordings, transcribe your 
 ### Backend
 
 - [x] Flask 🐍
-- [ ] Java + Spring Boot ☕
 - [x] API design 📡
 - [ ] Database 🗄️
 - [ ] Message Queue and Redis for scalability 📬
@@ -40,7 +45,7 @@ Right now, this app allows you to review your voice recordings, transcribe your 
 ### Infrastructure
 
 - [x] Docker 🐳
-- [ ] Cloud deployment ☁️
+- [x] Cloud deployment ☁️ Free AWS hosting services is expired. A new deployment is on the way!
 
 ## Usage
 

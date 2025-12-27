@@ -1,10 +1,10 @@
-Flask==3.1.0
+Flask==3.1.2
 Flask_Cors==5.0.0
 Flask_Limiter==3.10.1
 gunicorn==23.0.0
-openai==1.60.1
-pydantic==2.10.6
-python-dotenv==1.0.1
+openai==2.14.0
+pydantic==2.12.5
+python-dotenv==1.2.1
 redis==5.2.1
-Requests==2.32.3
-Werkzeug==3.1.3
+Requests==2.32.5
+Werkzeug==3.1.4
