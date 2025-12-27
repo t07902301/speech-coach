@@ -39,6 +39,68 @@ def speech_to_text(audio: FileStorage):
         raise Exception(str(e))
     finally:
         os.remove(audio_path)
+from typing import List
+class ClipTranscriptResponse(BaseModel):
+    complete_transcript: str
+    clips: List[dict]
+
+def clip_speech_to_text(audio: FileStorage) -> ClipTranscriptResponse:
+    client = OpenAI(api_key=API_KEY)
+    audio_path = tempfile.NamedTemporaryFile(
+        delete=False, suffix=os.path.splitext(audio.filename)[1]
+    ).name  # Create a temporary file sharing the same extension as the input audio file
+    audio.save(audio_path)  # Save the FileStorage Object to the temporary file
+
+    audio_file = open(audio_path, "rb")
+
+    try:
+        transcript_clips = client.audio.transcriptions.create(
+            file=audio_file,
+            model="whisper-1",
+            response_format="verbose_json",
+            timestamp_granularities=["segment"]
+        )
+        return ClipTranscriptResponse(complete_transcript=transcript_clips.text, clips=transcript_clips.segments)
+    except Exception as e:
+        raise Exception(str(e))
+    finally:
+        os.remove(audio_path)
+
+def mock_clip_speech_to_text(audio: FileStorage) -> ClipTranscriptResponse:
+    transcript_clips = {
+        "text": "Bonjour, vous êtes...",
+        "task": "transcribe",
+        "language": "french",
+        "duration": 2.0,
+        "segments": [
+            {
+            "id": 0,
+            "seek": 0,
+            "start": 0.0,
+            "end": 2.0,
+            "text": " Bonjour, vous êtes...",
+            "tokens": [
+                50364,
+                25431,
+                11,
+                2630,
+                18935,
+                485,
+                50464
+            ],
+            "temperature": 0.0,
+            "avg_logprob": -0.5145336389541626,
+            "compression_ratio": 0.7333333492279053,
+            "no_speech_prob": 0.5912227630615234
+            }
+        ],
+        "usage": {
+            "type": "duration",
+            "seconds": 2
+        }
+    }
+        
+    return ClipTranscriptResponse(complete_transcript=transcript_clips["text"], clips=transcript_clips["segments"])
 
 
 def speech_to_text_timestamps(audio_location: str):
