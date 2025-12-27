@@ -10,12 +10,16 @@ Right now, this app allows you to review your voice recordings, transcribe your 
 - [x] Replay your voice recordings 🔁
 - [x] Display refined versions from LLM ✨
 - [x] Timer to limit speech length ⏲️
-- [ ] Shadow reading 📖
-- [ ] Pronunciation assessment 💯
-- [ ] Multilingual 🌍
+- [x] Shadow reading 📖 of Any Audio, Any Text you like!
+- [x] Acoustic assessment 💯 based on a sample audio. 
+- [x] Multilingual 🌍 for English, French and more to come. 
+
 ## Demo
 
-![Demo Screenshot]( readme-images/app-demo.gif)
+1. Record yourself and have the recording transcribed. You can also evaluate the acoustics quality of your recordings by comparing it to a synthetic audio generated from the same transcription. 
+![Recording Transcription Screenshot](readme-images/recording-transcription.gif)
+2. Shadow reading on any audio you chose or a syntectic one generated from any text content you like!
+![Audio Clip Screenshot](readme-images/audio-clips.png)
 
 ## How It Works
 
@@ -27,7 +31,6 @@ Right now, this app allows you to review your voice recordings, transcribe your 
 ### Backend
 
 - [x] Flask 🐍
-- [ ] Java + Spring Boot ☕
 - [x] API design 📡
 - [ ] Database 🗄️
 - [ ] Message Queue and Redis for scalability 📬
@@ -40,7 +43,7 @@ Right now, this app allows you to review your voice recordings, transcribe your 
 ### Infrastructure
 
 - [x] Docker 🐳
-- [ ] Cloud deployment ☁️
+- [x] Cloud deployment ☁️ Free AWS hosting services is expired. A new deployment is on the way!
 
 ## Usage
 
