@@ -15,7 +15,7 @@ Right now, this app allows you to review your voice recordings, transcribe your 
 - [ ] Multilingual 🌍
 ## Demo
 
-![Demo Screenshot](app-demo.gif)
+![Demo Screenshot]( readme-images/app-demo.gif)
 
 ## How It Works
 
