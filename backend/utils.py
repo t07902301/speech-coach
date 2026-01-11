@@ -43,8 +43,6 @@ def speech_to_text(audio: FileStorage):
 
 
 def clip_speech_to_text(audio: FileStorage) -> List[dict]:
-    load_dotenv(dotenv_path="../backend/.env")
-
     elevenlabs = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
