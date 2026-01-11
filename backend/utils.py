@@ -10,6 +10,7 @@ from werkzeug.datastructures import FileStorage
 from collections import Counter
 import string
 from typing import List
+from elevenlabs.client import ElevenLabs
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -40,8 +41,13 @@ def speech_to_text(audio: FileStorage):
     finally:
         os.remove(audio_path)
 
+
 def clip_speech_to_text(audio: FileStorage) -> List[dict]:
-    client = OpenAI(api_key=API_KEY)
+    load_dotenv(dotenv_path="../backend/.env")
+
+    elevenlabs = ElevenLabs(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
+    )
     audio_path = tempfile.NamedTemporaryFile(
         delete=False, suffix=os.path.splitext(audio.filename)[1]
     ).name  # Create a temporary file sharing the same extension as the input audio file
@@ -50,13 +56,19 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     audio_file = open(audio_path, "rb")
 
     try:
-        transcript_clips = client.audio.transcriptions.create(
+        transcription = elevenlabs.speech_to_text.convert(
             file=audio_file,
-            model="whisper-1",
-            response_format="verbose_json",
-            timestamp_granularities=["segment"]
+            model_id="scribe_v1", # Model to use
+            tag_audio_events=True, # Tag audio events like laughter, applause, etc.
+            timestamps_granularity = "character"
         )
-        return [segment.model_dump() if hasattr(segment, 'model_dump') else segment for segment in transcript_clips.segments]
+        characters = []
+        for word in transcription.words:
+            characters += [char.model_dump(mode='json') for char in word.characters]        
+        return {"text": transcription.text, "characters": characters}
+        # with open("char_ts.pkl", "rb") as f:
+        #     character_timestamps = pkl.load(f)
+        # return {"text": "Local loisirs, Alain Dauger, bonjour. Oui, bonjour. Je suis Richard Soisson. Bonjour monsieur Soisson. Comment allez-vous ? Bien, merci. J'ai votre email devant moi et j'ai deux questions pour l'appartement au coin de la rue Victor Hugo et de la rue Michelet. L'appartement près de notre agence, c'est ça ? Oui, c'est ça. À côté de chez vous. Est-ce qu'il y a une fenêtre dans la salle de bains ? Non. Bon. Et où sont les placards ? Ils sont dans la chambre et au bout du couloir.", "characters": character_timestamps}
     except Exception as e:
         raise Exception(str(e))
     finally:
