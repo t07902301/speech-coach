@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import MainPage from "./components/MainPage";
 import SampleReader from "./components/SampleReader";
-import AudioClipper from "./components/AudioClipper";
+import AudioClipper from "./components/AudioSelectionPlayer";
 function App() {
   return (
     <Router>
@@ -15,7 +15,7 @@ function App() {
             <Link to="/sample_reading" style={{ textDecoration: "none", padding: "0.5rem 1rem", background: "#dfa41a", borderRadius: "4px" }}>Sample Reading</Link>
           </li>
           <li style={{ margin: "0 1rem" }}>
-            <Link to="/audio_clipping" style={{ textDecoration: "none", padding: "0.5rem 1rem", background: "#dfa41a", borderRadius: "4px" }}>Audio Clipping</Link>
+            <Link to="/audio_segment_player" style={{ textDecoration: "none", padding: "0.5rem 1rem", background: "#dfa41a", borderRadius: "4px" }}>Audio Segment Player</Link>
           </li>
         </ul>
       </nav>
@@ -23,7 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/sample_reading" element={<SampleReader />} />
-        <Route path="/audio_clipping" element={<AudioClipper/>} />
+        <Route path="/audio_segment_player" element={<AudioClipper/>} />
       </Routes>
     </Router>
   );
