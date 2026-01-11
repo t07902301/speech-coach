@@ -19,7 +19,7 @@ Right now, this app allows you to transcribe your voice recordings, polish trans
 <!-- ![Recording Transcription Screenshot](readme-images/recording-transcription.gif) -->
 <img src="readme-images/recording-transcription.gif" width="400">
 
-2. Shadow reading on any audio you chose or a syntectic one generated from any text content you like!
+2. Shadow reading of any audio you chose or a syntectic one generated from any text content you like!
 <!-- ![Audio Clip Screenshot](readme-images/audio-clips.png) -->
 <img src="readme-images/audio-clips.png" width="400">
 
@@ -45,7 +45,7 @@ Right now, this app allows you to transcribe your voice recordings, polish trans
 ### Infrastructure
 
 - [x] Docker 🐳
-- [x] Cloud deployment ☁️ Free AWS hosting services is expired. A new deployment is on the way!
+- [x] Cloud deployment ☁️ Free AWS hosting services is expired. A more sustainable cloud deployment is on the way!
 
 ## Usage
 
