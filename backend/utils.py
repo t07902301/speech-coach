@@ -41,7 +41,6 @@ def speech_to_text(audio: FileStorage):
     finally:
         os.remove(audio_path)
 
-
 def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     elevenlabs = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
@@ -58,15 +57,31 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
             file=audio_file,
             model_id="scribe_v1", # Model to use
             tag_audio_events=True, # Tag audio events like laughter, applause, etc.
-            timestamps_granularity = "character"
+            timestamps_granularity = "character",
+            diarize=True
         )
         characters = []
         for word in transcription.words:
-            characters += [char.model_dump(mode='json') for char in word.characters]        
-        return {"text": transcription.text, "characters": characters}
-        # with open("char_ts.pkl", "rb") as f:
-        #     character_timestamps = pkl.load(f)
-        # return {"text": "Local loisirs, Alain Dauger, bonjour. Oui, bonjour. Je suis Richard Soisson. Bonjour monsieur Soisson. Comment allez-vous ? Bien, merci. J'ai votre email devant moi et j'ai deux questions pour l'appartement au coin de la rue Victor Hugo et de la rue Michelet. L'appartement près de notre agence, c'est ça ? Oui, c'est ça. À côté de chez vous. Est-ce qu'il y a une fenêtre dans la salle de bains ? Non. Bon. Et où sont les placards ? Ils sont dans la chambre et au bout du couloir.", "characters": character_timestamps}
+            characters += [char.model_dump(mode='json') for char in word.characters]    
+
+        words = transcription.words
+
+        diarization_timestamps = []
+        current_speaker = words[0].speaker_id
+        current_speaker_start_idx = 0
+        diarization_text = []
+        current_diarization_text = ""
+        for idx, word in enumerate(words):
+            if word.speaker_id != current_speaker:
+                # a new speaker appears, and archive the old one. 
+                diarization_timestamps.append({"start": words[current_speaker_start_idx].start, "end": words[idx - 1].end})
+                diarization_text.append(current_diarization_text)
+                current_diarization_text = word.text
+                current_speaker = word.speaker_id
+                current_speaker_start_idx = idx
+            else:
+                current_diarization_text += word.text    
+        return {"text": transcription.text, "characters": characters, "diarization_timestamps": diarization_timestamps, "diarization_text": diarization_text}
     except Exception as e:
         raise Exception(str(e))
     finally:
