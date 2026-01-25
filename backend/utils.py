@@ -59,33 +59,60 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
             tag_audio_events=True, # Tag audio events like laughter, applause, etc.
             timestamps_granularity = "character",
             diarize=True
-        )
-        characters = []
-        for word in transcription.words:
-            characters += [char.model_dump(mode='json') for char in word.characters]    
+        ).model_dump(mode='json')
 
-        words = transcription.words
+        words = transcription.get('words', [])
+        diarization_segments = []
 
-        diarization_timestamps = []
-        current_speaker = words[0].speaker_id
-        current_speaker_start_idx = 0
-        diarization_text = []
-        current_diarization_text = ""
-        for idx, word in enumerate(words):
-            if word.speaker_id != current_speaker:
-                # a new speaker appears, and archive the old one. 
-                diarization_timestamps.append({"start": words[current_speaker_start_idx].start, "end": words[idx - 1].end})
-                diarization_text.append(current_diarization_text)
-                current_diarization_text = word.text
-                current_speaker = word.speaker_id
-                current_speaker_start_idx = idx
-            else:
-                current_diarization_text += word.text    
-        return {"text": transcription.text, "characters": characters, "diarization_timestamps": diarization_timestamps, "diarization_text": diarization_text}
+        if words:
+            # Initialize the current "buffer" with the first word
+            current_segment_words = [words[0]]
+            
+            # Iterate starting from the second word
+            for word in words[1:]:
+                # If speaker changes, commit the buffer and start a new one
+                if word['speaker_id'] != current_segment_words[-1]['speaker_id']:
+                    
+                    # -- Commit Logic --
+                    diarization_segments.append({
+                        "start": current_segment_words[0]['start'],
+                        "end": current_segment_words[-1]['end'],
+                        "text": "".join(w['text'] for w in current_segment_words),
+                        "characters": [c for w in current_segment_words for c in w['characters']]
+                    })
+                    
+                    # Reset buffer with the new word
+                    current_segment_words = [word]
+                else:
+                    # Same speaker, just add to buffer
+                    current_segment_words.append(word)
+
+            # -- Commit Final Segment --
+            if current_segment_words:
+                diarization_segments.append({
+                    "start": current_segment_words[0]['start'],
+                    "end": current_segment_words[-1]['end'],
+                    "text": "".join(w['text'] for w in current_segment_words),
+                    "characters": [c for w in current_segment_words for c in w['characters']]
+                })
+            return diarization_segments
+        else:
+            raise Exception("No words are found in the transcription.")
     except Exception as e:
         raise Exception(str(e))
     finally:
         os.remove(audio_path)
+
+    # import pickle as pkl
+    # try:
+    #     with open('../tests/audios/char_ts-diarization.pkl', 'rb') as file:
+    #         # 2. Load the data from the file
+    #         loaded_data = pkl.load(file)   
+    #     return loaded_data
+    # except Exception as e:
+    #     raise Exception(str(e))
+    # finally:
+    #     os.remove(audio_path)         
 
 def speech_to_text_timestamps(audio_location: str):
     client = OpenAI(api_key=API_KEY)
