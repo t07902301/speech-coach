@@ -6,6 +6,7 @@ import random
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
 from flask import json
 from werkzeug.exceptions import HTTPException
 import redis
@@ -130,15 +131,9 @@ def fake_transcribe():
     )
 
 
-@app.errorhandler(HTTPException)
-def handle_exception(e):
-    response = e.get_response()
-    response.data = json.dumps(
-        {
-            "code": e.code,
-            "name": e.name,
-            "description": e.description,
-        }
-    )
-    response.content_type = "application/json"
-    return response
+@app.errorhandler(RateLimitExceeded)
+def ratelimit_handler(e):
+    return jsonify({
+        "error": "Rate limit exceeded",
+        "message": str(e.description)
+    }), 429

@@ -41,7 +41,6 @@ def speech_to_text(audio: FileStorage):
     finally:
         os.remove(audio_path)
 
-
 def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     elevenlabs = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
@@ -58,19 +57,62 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
             file=audio_file,
             model_id="scribe_v1", # Model to use
             tag_audio_events=True, # Tag audio events like laughter, applause, etc.
-            timestamps_granularity = "character"
-        )
-        characters = []
-        for word in transcription.words:
-            characters += [char.model_dump(mode='json') for char in word.characters]        
-        return {"text": transcription.text, "characters": characters}
-        # with open("char_ts.pkl", "rb") as f:
-        #     character_timestamps = pkl.load(f)
-        # return {"text": "Local loisirs, Alain Dauger, bonjour. Oui, bonjour. Je suis Richard Soisson. Bonjour monsieur Soisson. Comment allez-vous ? Bien, merci. J'ai votre email devant moi et j'ai deux questions pour l'appartement au coin de la rue Victor Hugo et de la rue Michelet. L'appartement près de notre agence, c'est ça ? Oui, c'est ça. À côté de chez vous. Est-ce qu'il y a une fenêtre dans la salle de bains ? Non. Bon. Et où sont les placards ? Ils sont dans la chambre et au bout du couloir.", "characters": character_timestamps}
+            timestamps_granularity = "character",
+            diarize=True
+        ).model_dump(mode='json')
+
+        words = transcription.get('words', [])
+        diarization_segments = []
+
+        if words:
+            # Initialize the current "buffer" with the first word
+            current_segment_words = [words[0]]
+            
+            # Iterate starting from the second word
+            for word in words[1:]:
+                # If speaker changes, commit the buffer and start a new one
+                if word['speaker_id'] != current_segment_words[-1]['speaker_id']:
+                    
+                    # -- Commit Logic --
+                    diarization_segments.append({
+                        "start": current_segment_words[0]['start'],
+                        "end": current_segment_words[-1]['end'],
+                        "text": "".join(w['text'] for w in current_segment_words),
+                        "characters": [c for w in current_segment_words for c in w['characters']]
+                    })
+                    
+                    # Reset buffer with the new word
+                    current_segment_words = [word]
+                else:
+                    # Same speaker, just add to buffer
+                    current_segment_words.append(word)
+
+            # -- Commit Final Segment --
+            if current_segment_words:
+                diarization_segments.append({
+                    "start": current_segment_words[0]['start'],
+                    "end": current_segment_words[-1]['end'],
+                    "text": "".join(w['text'] for w in current_segment_words),
+                    "characters": [c for w in current_segment_words for c in w['characters']]
+                })
+            return diarization_segments
+        else:
+            raise Exception("No words are found in the transcription.")
     except Exception as e:
         raise Exception(str(e))
     finally:
         os.remove(audio_path)
+
+    # import pickle as pkl
+    # try:
+    #     with open('../tests/audios/char_ts-diarization.pkl', 'rb') as file:
+    #         # 2. Load the data from the file
+    #         loaded_data = pkl.load(file)   
+    #     return loaded_data
+    # except Exception as e:
+    #     raise Exception(str(e))
+    # finally:
+    #     os.remove(audio_path)         
 
 def speech_to_text_timestamps(audio_location: str):
     client = OpenAI(api_key=API_KEY)

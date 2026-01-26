@@ -92,3 +92,26 @@ curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/acoust
 ```sh
 curl -X POST -H "Content-Type: application/json" -d '{"text": "Hello, world!"}' http://<host>:<port>/speeches/synthesis --output output.wav
 ```
+
+## Transcribe Audio File with Speaker Diarization and Character-level Timestamps
+
+**URL:** `/speeches/transcription_clips`  
+**Method:** `POST`
+
+### Request
+- **Content-Type:** `multipart/form-data`
+- **Form Data:**
+    - `audio`: The audio file to be transcribed.
+
+### Responses
+- **200 OK:**
+    - **JSON:** `{"transcription": [{"text": <segment text>, "start": <segment start time>, "end": <segment end time>, "characters":[{'text': '<char>', 'start': <char start time>, 'end': <char end time>},]}]}`
+- **400 Bad Request:**
+    - **JSON:** `{"error": "No audio file provided"}`
+- **500 Internal Server Error:**
+    - **JSON:** `{"error": "<error_message>"}`
+
+### Example
+```sh
+curl -X POST -F "audio=@path_to_audio_file" http://<host>:<port>/speeches/transcriptions_clips
+```

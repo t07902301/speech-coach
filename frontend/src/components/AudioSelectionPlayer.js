@@ -1,6 +1,4 @@
-
 import React, { useState, useRef } from 'react';
-
 // KMP Implementation
 const getFirstMatchIndex = (text, pattern) => {
   if (!pattern) return 0;
@@ -26,15 +24,15 @@ const getFirstMatchIndex = (text, pattern) => {
   }
   return -1;
 };
-
-const AudioSelectionPlayer = () => {
-  const [selectionData, setSelectionData] = useState(null);
-  const audioRef = useRef(null);
+const AudioSelectinPlayer = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null); // URL for the player
-  const [transcription, setTranscription] = useState(null);
+  const [transcriptionClips, setTranscriptionClips] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [selectionData, setSelectionData] = useState(null);
+
+  const audioRef = useRef(null); // Reference to the audio element
+
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
   const handleFileChange = (event) => {
@@ -43,7 +41,7 @@ const AudioSelectionPlayer = () => {
       setSelectedFile(file);
       // Create a local URL so the browser can play the file before/after upload
       setAudioUrl(URL.createObjectURL(file)); 
-      setTranscription(null);
+      setTranscriptionClips(null);
     }
   };
 
@@ -67,7 +65,7 @@ const AudioSelectionPlayer = () => {
         alert(`Error ${response.status}: ${errorMessage}`); // Or set an error state
         throw new Error(`Error ${response.status}: ${errorMessage}`)
       }
-      setTranscription(data.transcription);
+      setTranscriptionClips(data.transcription);
     } catch (err) {
       console.error("Upload failed", err);
     } finally {
@@ -75,45 +73,71 @@ const AudioSelectionPlayer = () => {
     }
   };
 
+  // 1. Function to play a specific segment with an end time
   const playClip = (startTime, endTime) => {
     if (audioRef.current) {
       const audio = audioRef.current;
+
+      // Jump to start and play
       audio.currentTime = startTime;
       audio.play();
 
+      // Define the stopping logic
       const handleStopAtEnd = () => {
         if (audio.currentTime >= endTime) {
           audio.pause();
+          // Remove the listener immediately so it doesn't interfere 
+          // with normal playback later
           audio.removeEventListener('timeupdate', handleStopAtEnd);
         }
       };
+
+      // Add the listener
       audio.addEventListener('timeupdate', handleStopAtEnd);
     }
   };
 
-  const handleTextSelection = (transcription) => {
-    const selection = window.getSelection();
-    const selectedText = selection.toString();
-    
-    if (!selectedText) {
-      setSelectionData(null);
-      return;
-    }
-
-    const matchIndex = getFirstMatchIndex(transcription.text, selectedText);
-
-    if (matchIndex !== -1 && transcription.characters) {
-      const startTimestamp = transcription.characters[matchIndex].start;
-      const endTimestamp = transcription.characters[matchIndex + selectedText.length - 1].end;
-
-      setSelectionData({
-        start: startTimestamp,
-        end: endTimestamp,
-        text: selectedText
-      });
-    }
+  const displayTime = (seconds) => {
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
   };
 
+    // 1. Add state to track visibility
+    const [visibleSegments, setVisibleSegments] = useState({});
+
+    // 2. Function to toggle visibility for a specific index
+    const toggleText = (index) => {
+    setVisibleSegments(prev => ({
+        ...prev,
+        [index]: !prev[index]
+    }));
+    };
+    
+    const handleTextSelection = (transcription, index) => {
+      const selection = window.getSelection();
+      const selectedText = selection.toString();
+      
+      if (!selectedText) {
+        setSelectionData(null);
+        return;
+      }
+  
+      const matchIndex = getFirstMatchIndex(transcription.text, selectedText);
+  
+      if (matchIndex !== -1 && transcription.characters) {
+        const startTimestamp = transcription.characters[matchIndex].start;
+        const endTimestamp = transcription.characters[matchIndex + selectedText.length - 1].end;
+  
+        setSelectionData({
+          start: startTimestamp,
+          end: endTimestamp,
+          text: selectedText,
+          index: index
+        });
+      }
+    };
+  
   return (
     <div style={styles.container}>
 
@@ -130,54 +154,95 @@ const AudioSelectionPlayer = () => {
         {isLoading ? 'Processing...' : 'Transcribe & Clip'}
       </button>
 
-      {/* Floating Action Button for Selection */}
-      {selectionData && (
-        <div style={styles.popover}>
-          <button 
-            onClick={() => playClip(selectionData.start, selectionData.end)}
-            style={styles.playBtn}
-          >
-            ▶ Play "{selectionData.text.substring(0, 20)}..."
-          </button>
-          <button onClick={() => setSelectionData(null)} style={styles.closeBtn}>✕</button>
+      {transcriptionClips && (
+  <div style={styles.results}>
+    <h3>Clips (Click to Play)</h3>
+    {transcriptionClips.map((segment, index) => (
+      <div key={index} style={styles.segmentCard}>
+        <div style={styles.segmentHeader}>
+          <span style={styles.timeLabel}>
+            {displayTime(segment.start)} - {displayTime(segment.end)}
+          </span>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              onClick={() => playClip(segment.start, segment.end)}
+              style={styles.playBtn}
+            >
+              ▶ Play Clip
+            </button>
+            {/* New Toggle Button */}
+            <button 
+              onClick={() => toggleText(index)}
+              style={styles.textBtn} // Add a style for this
+            >
+              {visibleSegments[index] ? "Hide Text" : "Show Text"}
+            </button>
+          </div>
         </div>
-      )}
 
-      { 
-        transcription && (<div style={{ marginTop: '30px' }}>
+        {/* Conditional Rendering: Only show if the index is true in state */}
+        {visibleSegments[index] && (
             <p 
-                onMouseUp={() => handleTextSelection(transcription)}
-                style={styles.textBlock}
-                >
-                {transcription.text}
+              onMouseUp={() => handleTextSelection(segment, index)}
+              style={styles.segmentText}
+              >
+              {segment.text}
             </p>
-        </div>)
-      }
+        )}
 
+        {/* Floating Action Button for Selection, Only Display this Button in the Selected Segment */}
+        {selectionData &&  selectionData.index == index && (
+          <div style={styles.popover}>
+            <button 
+              onClick={() => playClip(selectionData.start, selectionData.end)}
+              style={styles.floatingBtn}
+            >
+              ▶ Play "{selectionData.text.substring(0, 20)}..."
+            </button>
+            <button onClick={() => setSelectionData(null)} style={styles.closeBtn}>✕</button>
+          </div>
+        )} 
+      </div>
+    ))} 
+  </div>
+)}
     </div>
   );
 };
 
 const styles = {
   container: { maxWidth: '600px', margin: '20px auto', fontFamily: 'sans-serif' },
-  segment: { marginBottom: '15px', borderBottom: '1px solid #eee' },
-  textBlock: { fontSize: '18px', lineHeight: '1.6', cursor: 'text', userSelect: 'text' },
-  popover: {
-    position: 'fixed',
-    bottom: '40px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: '#333',
-    color: 'white',
-    padding: '10px 20px',
-    borderRadius: '30px',
-    display: 'flex',
-    alignItems: 'center',
-    boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-    zIndex: 100
+  playerContainer: { margin: '20px 0', padding: '15px', background: '#f0f0f0', borderRadius: '8px' },
+  audioPlayer: { width: '100%' },
+  segmentCard: { 
+    border: '1px solid #ddd', 
+    padding: '10px', 
+    margin: '10px 0', 
+    borderRadius: '6px',
+    backgroundColor: '#fff'
   },
-  playBtn: { background: 'none', border: 'none', color: '#4dabf7', fontWeight: 'bold', cursor: 'pointer' },
-  closeBtn: { background: 'none', border: 'none', color: '#fff', marginLeft: '15px', cursor: 'pointer' }
+  segmentHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  timeLabel: { fontSize: '0.8rem', color: '#666', fontWeight: 'bold' },
+  playBtn: { 
+    padding: '4px 8px', 
+    fontSize: '0.75rem', 
+    cursor: 'pointer',
+    backgroundColor: '#28a745',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px'
+  },
+  textBtn: { 
+    padding: '4px 8px', 
+    fontSize: '0.75rem', 
+    cursor: 'pointer',
+    backgroundColor: 'DodgerBlue',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px'
+  },
+  floatingBtn: { background: 'none', border: 'none', color: '#4dabf7', fontWeight: 'bold', cursor: 'pointer' },
+  segmentText: { marginTop: '8px', lineHeight: '1.4' }
 };
 
-export default AudioSelectionPlayer;
+export default AudioSelectinPlayer;
