@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import MainPage from "./components/MainPage";
 import SampleReader from "./components/SampleReader";
 import AudioSelectinPlayer from "./components/AudioSelectionPlayer";
+import AudioAligner from "./components/AudioAligner";
 function App() {
   return (
     <Router>
@@ -22,7 +23,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<MainPage />} />
-        <Route path="/sample_reading" element={<SampleReader />} />
+        <Route path="/sample_reading" element={< AudioAligner />} />
         <Route path="/audio_segment_player" element={<AudioSelectinPlayer/>} />
       </Routes>
     </Router>
