@@ -1,7 +1,7 @@
 import os
 from flask import Flask, abort, request, jsonify, render_template
 from flask_cors import CORS
-from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision, clip_speech_to_text
+from utils import text_to_speech, speech_to_text, evaluate_audio_discrepancy, text_to_text, store_audio, eval_revision, clip_speech_to_text
 import random
 
 from flask_limiter import Limiter
@@ -94,11 +94,11 @@ def generate_speech():
     return app.response_class(audio_data, mimetype='audio/wav')
 
 
-@app.route("/api/speeches/acoustics_scores", methods=["POST"])
+@app.route("/api/speeches/acoustic_evaluation", methods=["POST"])
 def predict_acoustics_scores():
     # audio_path = cache_audios(request.files['audio'])
     try:
-        score = acoustic_assess(request.files["query_audio"], request.files["reference_audio"])
+        score = evaluate_audio_discrepancy(request.files["query_audio"], request.files["reference_audio"])
     except Exception as e:
         abort(500, str(e))
     return jsonify({"score": score})
