@@ -114,22 +114,6 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     # finally:
     #     os.remove(audio_path)         
 
-def speech_to_text_timestamps(audio_location: str):
-    client = OpenAI(api_key=API_KEY)
-    audio_file = open(audio_location, "rb")
-    try:
-        transcription = client.audio.transcriptions.create(
-            file=audio_file,
-            model="whisper-1",
-            response_format="verbose_json",
-            timestamp_granularities=["word"],
-        )
-        return transcription.text, transcription.words
-    except Exception as e:
-        raise Exception(str(e))
-
-
-
 class TextRevision(BaseModel):
     content: str
 
@@ -190,15 +174,39 @@ def text_to_speech(input_text):
     # logging.info(f"Generated audio file saved at {audio_path}")
     return response.read()
 
+from pydub import AudioSegment
 
+def trim_audio(input_file: str, output_file: str, start_sec: float, end_sec: float = None):
+    """
+    Trim the input audio file from start_sec to end_sec and save it as output_file. \n
+    """
+    # Load the audio file
+    audio = AudioSegment.from_file(input_file)
+    # Pydub works in milliseconds
+    start_time = start_sec * 1000
 
-def acoustic_assess(query_audio: FileStorage, ref_audio: FileStorage) -> float:
+    if end_sec is None:
+
+        trimmed_audio = audio[start_time:]
+
+    else:
+
+        end_time = end_sec * 1000
+    
+        # Slice the audio
+        trimmed_audio = audio[start_time:end_time]
+    
+    # Export the result
+    trimmed_audio.export(output_file, format="wav")
+    print(f"Saved: {output_file}")
+
+def evaluate_audio_discrepancy(query_audio: FileStorage, ref_audio: FileStorage) -> float:
     """
-    Get the similarity score between two audio files. \n
+    Get the discrepancy score between two audio files. \n
     """
-    # url = "http://localhost:6000/api/similarity_scores"
-    # url = "http://speech_assessment-models-1:6000/api/similarity_scores"
-    url = f"{ACOUSTIC_URL}/api/similarity_scores"
+    # url = "http://localhost:6000/api/discrepancy_score"
+    # url = "http://speech_assessment-models-1:6000/api/discrepancy_score"
+    url = f"{ACOUSTIC_URL}/api/discrepancy_score"
     headers = {}
 
     response = requests.request(
