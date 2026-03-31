@@ -15,13 +15,13 @@ Right now, this app allows you to transcribe your voice recordings, polish trans
 
 ## Demo
 
-1. Record yourself and have the recording transcribed. You can also evaluate the acoustics quality of your recordings by comparing it to a synthetic audio generated from the same transcription. 
+1. Record yourself and have your recording transcribed. You can also evaluate the acoustics quality of your recordings by comparing it to a synthetic audio generated from the same transcription. 
 <!-- ![Recording Transcription Screenshot](readme-images/recording-transcription.gif) -->
 <img src="readme-images/recording-transcription.gif" width="400">
 
-2. Shadow reading of any audio you chose or a syntectic one generated from any text content you like!
+2. Shadow reading of any audio you upload or syntectic audios generated from any text you write! You can also challenge your listening skills by hiding transcriptions of your audios.  
 <!-- ![Audio Clip Screenshot](readme-images/audio-clips.png) -->
-<img src="readme-images/audio-clips.png" width="400">
+<img src="readme-images/audio-clips.gif" width="400">
 
 ## How It Works
 
@@ -54,7 +54,7 @@ Right now, this app allows you to transcribe your voice recordings, polish trans
     cd backend
     cp .env.example .env
     ```
-    Add your OpenAI API key to the `.env` file.
+    Add your OpenAI and ElevenLab API key to the `.env` file.
 
 2. Deploy the application from the root directory of this project:
     ```sh
