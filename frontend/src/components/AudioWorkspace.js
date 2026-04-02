@@ -220,7 +220,7 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
         <button onClick={playMultitrack}>Play Combined Tracks</button>
       )}
       
-      <p>Offset: {offset.toFixed(2)} seconds</p>
+      <p>Offset: {-offset.toFixed(2)} seconds</p>
     </div>
   );
 };
