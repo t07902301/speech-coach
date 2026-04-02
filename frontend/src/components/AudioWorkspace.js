@@ -46,18 +46,19 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
     const newRecord = newWaveSurfer.registerPlugin(
       RecordPlugin.create({
         renderRecordedAudio: false,
-        scrollingWaveform: true, // Assuming true based on your variables
+        scrollingWaveform: false,
         continuousWaveform: true,
         continuousWaveformDuration: 30,
       })
     );
+
 
     newRecord.on('record-end', (blob) => {
       setRecordedUrl(URL.createObjectURL(blob));
     });
 
     newRecord.on('record-progress', (time) => {
-      updateProgress(time); // implement your progress UI here if needed
+      updateProgress(time); 
     });
 
     wavesurferRef.current = newWaveSurfer;
