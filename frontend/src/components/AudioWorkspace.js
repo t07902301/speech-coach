@@ -8,12 +8,11 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
   const [record, setRecord] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [offset, setOffset] = useState(0);
-  // Hold both URLs here. We prepopulate the main one from props.
-  const [audioUrls, setAudioUrls] = useState({
-    main: mainAudioUrl,
-    // delayed: null, // This will hold the recorded audio
-    delayed: mainAudioUrl, // For testing, we can start with the same URL. Change to null when ready to test recording.
-  });
+  const [recordedUrl, setRecordedUrl] = useState('');
+  const [progress, setProgress] = useState('00:00');
+  const pauseButtonRef = useRef(null);
+  const recButtonRef = useRef(null);
+  const wavesurfer = useRef(null);
 
   // --- Refs ---
   const wavesurferRef = useRef(null);
@@ -23,15 +22,15 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
   // --------------------------------------------------
   // 1. Recorder Initialization
   // --------------------------------------------------
-//   useEffect(() => {
-//     createWaveSurfer();
+  useEffect(() => {
+    createWaveSurfer();
     
-//     return () => {
-//       if (wavesurferRef.current) {
-//         wavesurferRef.current.destroy();
-//       }
-//     };
-//   }, []);
+    return () => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+      }
+    };
+  }, []);
 
   const createWaveSurfer = () => {
     if (wavesurferRef.current) {
@@ -53,39 +52,69 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
       })
     );
 
-    // 🔥 This is the bridge!
     newRecord.on('record-end', (blob) => {
-      const recordedUrl = URL.createObjectURL(blob);
-      
-      // Update the state so the Multitrack useEffect triggers
-      setAudioUrls((prev) => ({
-        ...prev,
-        delayed: recordedUrl,
-      }));
+      setRecordedUrl(URL.createObjectURL(blob));
     });
 
     newRecord.on('record-progress', (time) => {
-      // updateProgress(time); // implement your progress UI here if needed
+      updateProgress(time); // implement your progress UI here if needed
     });
 
     wavesurferRef.current = newWaveSurfer;
     setRecord(newRecord);
   };
+  const updateProgress = (time) => {
+    const formattedTime = [
+      Math.floor((time % 3600000) / 60000),
+      Math.floor((time % 60000) / 1000),
+    ]
+      .map((v) => (v < 10 ? '0' + v : v))
+      .join(':');
+    setProgress(formattedTime);
+  };
 
+  const handlePauseClick = () => {
+    if (record.isPaused()) {
+      record.resumeRecording();
+      pauseButtonRef.current.textContent = 'Pause';
+    } else {
+      record.pauseRecording();
+      pauseButtonRef.current.textContent = 'Resume';
+    }
+  };
+
+  const handleRecordClick = () => {
+    // Record or Stop
+    if (record.isRecording() || record.isPaused()) { // if recording started or paused with the button says Stop
+      record.stopRecording();
+      recButtonRef.current.textContent = 'Record';
+      recButtonRef.current.style.backgroundColor = "#28a745";
+      pauseButtonRef.current.style.display = 'none';
+    } else { 
+      recButtonRef.current.disabled = true;
+      record.startRecording().then(() => {
+        recButtonRef.current.textContent = 'Stop';
+        recButtonRef.current.disabled = false;
+        recButtonRef.current.style.backgroundColor = "rgb(193, 45, 45)";
+        pauseButtonRef.current.style.display = 'inline';
+        pauseButtonRef.current.textContent = 'Pause';
+      });
+    }
+  };
 
   // --------------------------------------------------
   // 2. Multitrack Initialization
   // --------------------------------------------------
   useEffect(() => {
-    console.log('Audio URLs updated:', audioUrls);
+
     // Only run when WE HAVE BOTH URLs and the container is ready
-    if (!containerRef.current || !audioUrls.main || !audioUrls.delayed) return;
+    if (!containerRef.current || !mainAudioUrl || !recordedUrl) return;
 
     multitrackRef.current = Multitrack.create(
       [
         {
           id: 'main-track',
-          url: audioUrls.main,
+          url: mainAudioUrl, // From props
           startPosition: 0,
           draggable: false,
           options: {
@@ -95,7 +124,7 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
         },
         {
           id: 'delayed-track',
-          url: audioUrls.delayed, // Now populated by the recording!
+          url: recordedUrl, // Now populated by the recording!
           startPosition: 0,
           draggable: true,
           options: {
@@ -126,28 +155,67 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
         setOffset(0);
       }
     };
-  }, [audioUrls]); // Triggers when audioUrls changes
+  }, [mainAudioUrl, recordedUrl]); // Triggers when audioUrls changes
 
-  // --- Helper Controls ---
-  const startRecording = () => record && record.startRecording();
-  const stopRecording = () => record && record.stopRecording();
+  // // --- Helper Controls ---
+  // const startRecording = () => record && record.startRecording();
+  // const stopRecording = () => record && record.stopRecording();
   const playMultitrack = () => multitrackRef.current && multitrackRef.current.play();
 
   return (
     <div>
       {/* Recording Area */}
-      <div id="mic" style={{ border: '1px solid #ccc', marginBottom: '10px' }}></div>
-      <button onClick={startRecording}>Start Record</button>
-      <button onClick={stopRecording}>Stop Record</button>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '80%' }}>
+        <div id="control-buttons" style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+          <button
+            id="pause"
+            ref={pauseButtonRef}
+            onClick={handlePauseClick}
+            style={{
+              padding: '10px 20px',
+              marginRight: '10px',
+              backgroundColor: '#007bff',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              display: 'none',
+            }}
+          >
+            Pause
+          </button>
+          <button
+            id="record"
+            ref={recButtonRef}
+            onClick={handleRecordClick}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              display: 'inline',
+            }}
+          >
+            Record
+          </button>      
+        </div>
+        <div id="progress" style={{ margin: '10px 0' }}>Recording Time: {progress}</div>
+        <br />
+        <div id="mic" style={{ width: '100%', height: '50%'}}></div>
+        <div id="recordings" style={{ width: '100%', height: '30%' }}></div>
+      </div>
 
       <hr />
 
       {/* Multitrack Area */}
       <h3>Multitrack Editor</h3>
-      {!audioUrls.delayed && <p>Record some audio to see the multitrack effect!</p>}
+      {!recordedUrl && <p>Record some audio to see the multitrack effect!</p>}
       <div ref={containerRef} style={{ width: '100%', minHeight: '200px' }}></div>
       
-      {audioUrls.delayed && (
+      {recordedUrl && (
         <button onClick={playMultitrack}>Play Combined Tracks</button>
       )}
       
