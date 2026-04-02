@@ -12,12 +12,16 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
   const [progress, setProgress] = useState('00:00');
   const pauseButtonRef = useRef(null);
   const recButtonRef = useRef(null);
-  const wavesurfer = useRef(null);
 
   // --- Refs ---
   const wavesurferRef = useRef(null);
   const multitrackRef = useRef(null);
   const containerRef = useRef(null);
+
+
+  // NEW: State for API submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState('');
 
   // --------------------------------------------------
   // 1. Recorder Initialization
@@ -159,9 +163,83 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
   }, [mainAudioUrl, recordedUrl]); // Triggers when audioUrls changes
 
   // // --- Helper Controls ---
-  // const startRecording = () => record && record.startRecording();
-  // const stopRecording = () => record && record.stopRecording();
-  const playMultitrack = () => multitrackRef.current && multitrackRef.current.play();
+  const playMultitrack = () => {
+    if (multitrackRef.current) {
+      isPlaying ? multitrackRef.current.pause() : multitrackRef.current.play();
+      setIsPlaying(!isPlaying);
+    }
+  };
+  const mockSyncApi = async (formData) => {
+    // Extract data just to "see" it in the console
+    const offset = formData.get('delayOffset');
+    console.log(`Mock API received offset: ${offset}s`);
+  
+    // Simulate network latency (2 seconds)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  
+    // Simulate a random success or failure (optional)
+    const isSuccess = Math.random() > 0.9; // 10% success rate
+  
+    if (isSuccess) {
+      return {
+        ok: true,
+        json: async () => ({ message: "Sync successful!", offset: offset, score: 100 })
+      };
+    } else {
+      return {
+        ok: false,
+        status: 500,
+        json: async () => ({ error: "Internal Server Error" })
+      };
+    }
+  };
+  const handleSubmitToAPI = async () => {
+    // 1. Validate that we have both files
+    if (!mainAudioUrl || !recordedUrl) {
+      setSubmitStatus('Error: Please upload both files before submitting.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus('Uploading and syncing...');
+
+    // 2. Create the FormData payload
+    const formData = new FormData();
+    
+    // Append the files
+    formData.append('mainAudio', mainAudioUrl);
+    formData.append('delayedAudio', recordedUrl);
+    
+    // Append the final offset. (Backend usually expects strings or numbers)
+    formData.append('delayOffset', -offset); 
+
+    try {
+      // 3. Send the POST request to your backend
+      // Note: Do NOT manually set the 'Content-Type' header to 'multipart/form-data'. 
+      // The browser does this automatically and adds the necessary boundary string.
+      // const response = await fetch('https://your-backend-api.com/api/sync', {
+      //   method: 'POST',
+      //   body: formData, 
+      // });
+
+      const response = await mockSyncApi(formData);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json(); // Assuming your API returns JSON
+      console.log('Server response:', result);
+      
+      setSubmitStatus(`✅ Successfully processed! Score: ${result.score}`);
+
+    } catch (error) {
+      console.error('Submission failed:', error);
+      setSubmitStatus('❌ Failed to upload. Check your connection or API.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div>
@@ -217,11 +295,38 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
       <div ref={containerRef} style={{ width: '100%', minHeight: '200px' }}></div>
       
       {recordedUrl && (
-        <button onClick={playMultitrack}>Play Combined Tracks</button>
+          <button
+            onClick={playMultitrack}
+            style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '4px' }}
+          >
+            {isPlaying ? 'Pause' : 'Play'}
+          </button>
       )}
       
       <p>Offset: {-offset.toFixed(2)} seconds</p>
-    </div>
+      <button
+            onClick={handleSubmitToAPI}
+            disabled={isSubmitting || !mainAudioUrl || !recordedUrl}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: isSubmitting ? '#999' : '#007BFF',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold',
+              fontSize: '16px'
+            }}
+          >
+            {isSubmitting ? 'Processing...' : 'Evaluate Audio Discrepancy'}
+          </button>
+      {/* Status Message */}
+      {submitStatus && (
+        <p style={{ marginTop: '15px', fontWeight: 'bold', color: submitStatus.includes('❌') ? 'red' : 'green' }}>
+          {submitStatus}
+        </p>
+      )}
+  </div>
   );
 };
 
