@@ -26,7 +26,43 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
   // --------------------------------------------------
   // 1. Recorder Initialization
   // --------------------------------------------------
+
+
   useEffect(() => {
+    
+    const createWaveSurfer = () => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+      }
+  
+      const newWaveSurfer = WaveSurfer.create({
+        container: '#mic',
+        waveColor: 'rgb(200, 0, 200)',
+        progressColor: 'rgb(100, 0, 100)',
+      });
+  
+      const newRecord = newWaveSurfer.registerPlugin(
+        RecordPlugin.create({
+          renderRecordedAudio: false,
+          scrollingWaveform: false,
+          continuousWaveform: true,
+          continuousWaveformDuration: 30,
+        })
+      );
+  
+  
+      newRecord.on('record-end', (blob) => {
+        setRecordedUrl(URL.createObjectURL(blob));
+      });
+  
+      newRecord.on('record-progress', (time) => {
+        updateProgress(time); 
+      });
+  
+      wavesurferRef.current = newWaveSurfer;
+      setRecord(newRecord);
+    };
+    
     createWaveSurfer();
     
     return () => {
@@ -36,38 +72,6 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
     };
   }, []);
 
-  const createWaveSurfer = () => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.destroy();
-    }
-
-    const newWaveSurfer = WaveSurfer.create({
-      container: '#mic',
-      waveColor: 'rgb(200, 0, 200)',
-      progressColor: 'rgb(100, 0, 100)',
-    });
-
-    const newRecord = newWaveSurfer.registerPlugin(
-      RecordPlugin.create({
-        renderRecordedAudio: false,
-        scrollingWaveform: false,
-        continuousWaveform: true,
-        continuousWaveformDuration: 30,
-      })
-    );
-
-
-    newRecord.on('record-end', (blob) => {
-      setRecordedUrl(URL.createObjectURL(blob));
-    });
-
-    newRecord.on('record-progress', (time) => {
-      updateProgress(time); 
-    });
-
-    wavesurferRef.current = newWaveSurfer;
-    setRecord(newRecord);
-  };
   const updateProgress = (time) => {
     const formattedTime = [
       Math.floor((time % 3600000) / 60000),
