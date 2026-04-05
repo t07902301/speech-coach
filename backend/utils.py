@@ -1,16 +1,19 @@
-import os
-import tempfile
-from dotenv import load_dotenv
-from openai import OpenAI
-import logging
 import base64
-from pydantic import BaseModel
-import requests
-from werkzeug.datastructures import FileStorage
-from collections import Counter
+import io
+import logging
+import os
 import string
+import tempfile
+from collections import Counter
 from typing import List
+
+import requests
+from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
+from openai import OpenAI
+from pydantic import BaseModel
+from pydub import AudioSegment
+from werkzeug.datastructures import FileStorage
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +24,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 ACOUSTIC_URL = os.getenv("ACOUSTIC_URL", "http://localhost:6000")
+
 
 def speech_to_text(audio: FileStorage):
     client = OpenAI(api_key=API_KEY)
@@ -41,6 +45,7 @@ def speech_to_text(audio: FileStorage):
     finally:
         os.remove(audio_path)
 
+
 def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     elevenlabs = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
@@ -55,32 +60,37 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     try:
         transcription = elevenlabs.speech_to_text.convert(
             file=audio_file,
-            model_id="scribe_v1", # Model to use
-            tag_audio_events=True, # Tag audio events like laughter, applause, etc.
-            timestamps_granularity = "character",
-            diarize=True
-        ).model_dump(mode='json')
+            model_id="scribe_v1",  # Model to use
+            tag_audio_events=True,  # Tag audio events like laughter, applause, etc.
+            timestamps_granularity="character",
+            diarize=True,
+        ).model_dump(mode="json")
 
-        words = transcription.get('words', [])
+        words = transcription.get("words", [])
         diarization_segments = []
 
         if words:
             # Initialize the current "buffer" with the first word
             current_segment_words = [words[0]]
-            
+
             # Iterate starting from the second word
             for word in words[1:]:
                 # If speaker changes, commit the buffer and start a new one
-                if word['speaker_id'] != current_segment_words[-1]['speaker_id']:
-                    
+                if word["speaker_id"] != current_segment_words[-1]["speaker_id"]:
                     # -- Commit Logic --
-                    diarization_segments.append({
-                        "start": current_segment_words[0]['start'],
-                        "end": current_segment_words[-1]['end'],
-                        "text": "".join(w['text'] for w in current_segment_words),
-                        "characters": [c for w in current_segment_words for c in w['characters']]
-                    })
-                    
+                    diarization_segments.append(
+                        {
+                            "start": current_segment_words[0]["start"],
+                            "end": current_segment_words[-1]["end"],
+                            "text": "".join(w["text"] for w in current_segment_words),
+                            "characters": [
+                                c
+                                for w in current_segment_words
+                                for c in w["characters"]
+                            ],
+                        }
+                    )
+
                     # Reset buffer with the new word
                     current_segment_words = [word]
                 else:
@@ -89,12 +99,16 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
 
             # -- Commit Final Segment --
             if current_segment_words:
-                diarization_segments.append({
-                    "start": current_segment_words[0]['start'],
-                    "end": current_segment_words[-1]['end'],
-                    "text": "".join(w['text'] for w in current_segment_words),
-                    "characters": [c for w in current_segment_words for c in w['characters']]
-                })
+                diarization_segments.append(
+                    {
+                        "start": current_segment_words[0]["start"],
+                        "end": current_segment_words[-1]["end"],
+                        "text": "".join(w["text"] for w in current_segment_words),
+                        "characters": [
+                            c for w in current_segment_words for c in w["characters"]
+                        ],
+                    }
+                )
             return diarization_segments
         else:
             raise Exception("No words are found in the transcription.")
@@ -107,12 +121,13 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     # try:
     #     with open('../tests/audios/char_ts-diarization.pkl', 'rb') as file:
     #         # 2. Load the data from the file
-    #         loaded_data = pkl.load(file)   
+    #         loaded_data = pkl.load(file)
     #     return loaded_data
     # except Exception as e:
     #     raise Exception(str(e))
     # finally:
-    #     os.remove(audio_path)         
+    #     os.remove(audio_path)
+
 
 class TextRevision(BaseModel):
     content: str
@@ -165,6 +180,7 @@ def text_to_text(text, image: FileStorage = None, customized_prompt=None):
         logger.info(response)
         raise Exception(str(e))
 
+
 def text_to_speech(input_text):
     client = OpenAI(api_key=API_KEY)
     response = client.audio.speech.create(model="tts-1", voice="nova", input=input_text)
@@ -174,9 +190,12 @@ def text_to_speech(input_text):
     # logging.info(f"Generated audio file saved at {audio_path}")
     return response.read()
 
-from pydub import AudioSegment
 
-def trim_audio(input_file: str, output_file: str, start_sec: float, end_sec: float = None):
+
+
+def trim_audio(
+    input_file: str, output_file: str, start_sec: float, end_sec: float = None
+):
     """
     Trim the input audio file from start_sec to end_sec and save it as output_file. \n
     """
@@ -186,36 +205,36 @@ def trim_audio(input_file: str, output_file: str, start_sec: float, end_sec: flo
     start_time = start_sec * 1000
 
     if end_sec is None:
-
         trimmed_audio = audio[start_time:]
 
     else:
-
         end_time = end_sec * 1000
-    
+
         # Slice the audio
         trimmed_audio = audio[start_time:end_time]
-    
+
     # Export the result
     trimmed_audio.export(output_file, format="wav")
     print(f"Saved: {output_file}")
 
-from io import BytesIO
+
+
 
 def generateFileStorage(name: str) -> FileStorage:
     # Read the audio file as bytes
-    with open(name, 'rb') as audio_file:
+    with open(name, "rb") as audio_file:
         audio_bytes = audio_file.read()
 
     # Create a FileStorage object
     audio_file_storage = FileStorage(
-        stream=BytesIO(audio_bytes),
-        filename='good.wav',
-        content_type='audio/wav'
+        stream=io.BytesIO(audio_bytes), filename="good.wav", content_type="audio/wav"
     )
-    return audio_file_storage 
+    return audio_file_storage
 
-def evaluate_audio_discrepancy(query_audio: FileStorage, ref_audio: FileStorage, query_start: float = None) -> float:
+
+def evaluate_audio_discrepancy(
+    query_audio: FileStorage, ref_audio: FileStorage, query_start: float = None
+) -> float:
     """
     Get the discrepancy score between a query and a reference audio.\n Trim the query audio when query_start is indicated. \n
     """
@@ -223,7 +242,7 @@ def evaluate_audio_discrepancy(query_audio: FileStorage, ref_audio: FileStorage,
     # url = "http://speech_assessment-models-1:6000/api/discrepancy_score"
     url = f"{ACOUSTIC_URL}/api/discrepancy_score"
     headers = {}
-    temp_query_audio_path = ''
+    temp_query_audio_path = ""
     try:
         if query_start is not None and query_start > 0:
             logger.info(f"Trimming query audio from {query_start} seconds.")
@@ -236,8 +255,13 @@ def evaluate_audio_discrepancy(query_audio: FileStorage, ref_audio: FileStorage,
             query_audio = generateFileStorage(temp_query_audio_path)
 
         response = requests.request(
-            "POST", url, headers=headers, \
-            files= {'query_audio': (query_audio.filename, query_audio), 'reference_audio': (ref_audio.filename, ref_audio)}
+            "POST",
+            url,
+            headers=headers,
+            files={
+                "query_audio": (query_audio.filename, query_audio),
+                "reference_audio": (ref_audio.filename, ref_audio),
+            },
         )
         if response.status_code != 200:
             raise Exception(f"Acoustic evaluation API error: {response.text}")
@@ -250,29 +274,27 @@ def evaluate_audio_discrepancy(query_audio: FileStorage, ref_audio: FileStorage,
             os.remove(temp_query_audio_path)
             logger.info(f"Removed temporary query audio file: {temp_query_audio_path}")
 
-from pydub import AudioSegment
-import io
 
 def load_fileStorage(audio: FileStorage, path: str) -> str:
-    
     # Read the file data into memory
     file_bytes = audio.read()
-    
+
     # Load the audio data regardless of the input format
     # This automatically detects if it's webm, ogg, wav, etc.
     audio_segment = AudioSegment.from_file(io.BytesIO(file_bytes))
-    
+
     # Export as a standardized WAV
     audio_segment.export(path, format="wav")
-    
+
     logger.info(f"Audio file saved to {path}")
+
 
 def eval_revision(transcript: str, revision: str) -> float:
     """
     Use ROUGE to calculate how many words in revision are in the transcription \n
     """
     # Remove punctuation from the transcript and revision
-    translator = str.maketrans('', '', string.punctuation)
+    translator = str.maketrans("", "", string.punctuation)
     transcript = transcript.translate(translator)
     revision = revision.translate(translator)
     # Convert both transcript and revision to lowercase
@@ -286,7 +308,7 @@ def eval_revision(transcript: str, revision: str) -> float:
     reference_count = Counter(reference_words)
     candidate_count = Counter(candidate_words)
     overlap = sum(min(candidate_count[w], reference_count[w]) for w in candidate_count)
-    
+
     # Compute precision, recall, and F1 score
     recall = overlap / len(reference_words)
-    return round(recall* 100, 4)
+    return round(recall * 100, 4)
