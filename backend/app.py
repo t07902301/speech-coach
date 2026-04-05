@@ -1,7 +1,7 @@
 import os
 from flask import Flask, abort, request, jsonify, render_template
 from flask_cors import CORS
-from utils import text_to_speech, speech_to_text, evaluate_audio_discrepancy, text_to_text, store_audio, eval_revision, clip_speech_to_text
+from utils import text_to_speech, speech_to_text, evaluate_audio_discrepancy, text_to_text, eval_revision, clip_speech_to_text, trim_audio, load_fileStorage
 import random
 
 from flask_limiter import Limiter
@@ -28,7 +28,8 @@ def save_audio():
         return jsonify({"error": "No audio file provided"}), 400
     audio = request.files["audio"]
     try:
-        audio_path = store_audio(audio)
+        storage_path = os.path.join('database/audios', audio.filename)
+        load_fileStorage(audio, storage_path)
     except Exception as e:
         abort(500, str(e))
     # app.logger.info(audio.filename)
@@ -36,7 +37,7 @@ def save_audio():
     # # TODO external database
     # audio_path = os.path.join('../api_tests/audios', audio.filename)
     # audio.save(audio_path)
-    return jsonify({"message": "File saved successfully", "file_path": audio_path}), 200
+    return jsonify({"message": "File saved successfully", "file_path": storage_path}), 200
 
 
 @app.route("/api/speeches/transcriptions", methods=["POST"])
@@ -86,19 +87,24 @@ def transcribe_audio_clip():
     
 @app.route("/api/speeches/generate/synthesis", methods=["POST"])
 def generate_speech():
-    data = json.loads(request.data)
+    # data = json.loads(request.data)
     try:
-        audio_data = text_to_speech(data["text"])
+        # audio_data = text_to_speech(data["text"])
+        with open("generated.wav", "rb") as f:
+            audio_data = f.read()
+        
     except Exception as e:
-        abort(500, str(e))
+        return jsonify({"error": str(e)}), 500
     return app.response_class(audio_data, mimetype='audio/wav')
 
 
 @app.route("/api/speeches/acoustic_evaluation", methods=["POST"])
 def predict_acoustics_scores():
     # audio_path = cache_audios(request.files['audio'])
+    # load_fileStorage(request.files['query_audio'], '../database/audios/query_audio.wav')
+    # load_fileStorage(request.files['reference_audio'], '../database/audios/reference_audio.wav')
     try:
-        score = evaluate_audio_discrepancy(request.files["query_audio"], request.files["reference_audio"])
+        score = evaluate_audio_discrepancy(request.files["query_audio"], request.files["reference_audio"], float(request.form.get("query_start", 0)))
     except Exception as e:
         abort(500, str(e))
     return jsonify({"score": score})

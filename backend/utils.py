@@ -200,31 +200,72 @@ def trim_audio(input_file: str, output_file: str, start_sec: float, end_sec: flo
     trimmed_audio.export(output_file, format="wav")
     print(f"Saved: {output_file}")
 
-def evaluate_audio_discrepancy(query_audio: FileStorage, ref_audio: FileStorage) -> float:
+from io import BytesIO
+
+def generateFileStorage(name: str) -> FileStorage:
+    # Read the audio file as bytes
+    with open(name, 'rb') as audio_file:
+        audio_bytes = audio_file.read()
+
+    # Create a FileStorage object
+    audio_file_storage = FileStorage(
+        stream=BytesIO(audio_bytes),
+        filename='good.wav',
+        content_type='audio/wav'
+    )
+    return audio_file_storage 
+
+def evaluate_audio_discrepancy(query_audio: FileStorage, ref_audio: FileStorage, query_start: float = None) -> float:
     """
-    Get the discrepancy score between two audio files. \n
+    Get the discrepancy score between a query and a reference audio.\n Trim the query audio when query_start is indicated. \n
     """
     # url = "http://localhost:6000/api/discrepancy_score"
     # url = "http://speech_assessment-models-1:6000/api/discrepancy_score"
     url = f"{ACOUSTIC_URL}/api/discrepancy_score"
     headers = {}
+    temp_query_audio_path = ''
+    try:
+        if query_start is not None and query_start > 0:
+            logger.info(f"Trimming query audio from {query_start} seconds.")
+            temp_query_audio_path = tempfile.NamedTemporaryFile(
+                delete=False, suffix=os.path.splitext(query_audio.filename)[1]
+            ).name  # Create a temporary file sharing the same extension as the input audio file
 
-    response = requests.request(
-        "POST", url, headers=headers, \
-        files= {'query_audio': (query_audio.filename, query_audio), 'reference_audio': (ref_audio.filename, ref_audio)}
-    )
+            trim_audio(query_audio, temp_query_audio_path, query_start)
 
-    return round(response.json()["score"], 2)
+            query_audio = generateFileStorage(temp_query_audio_path)
 
+        response = requests.request(
+            "POST", url, headers=headers, \
+            files= {'query_audio': (query_audio.filename, query_audio), 'reference_audio': (ref_audio.filename, ref_audio)}
+        )
+        if response.status_code != 200:
+            raise Exception(f"Acoustic evaluation API error: {response.text}")
+        return round(response.json()["score"], 2)
 
-def store_audio(audio: FileStorage) -> str:
-    """
-    Save the audio file to the database. \n
+    except Exception as e:
+        raise Exception(str(e))
+    finally:
+        if query_start is not None and os.path.exists(temp_query_audio_path):
+            os.remove(temp_query_audio_path)
+            logger.info(f"Removed temporary query audio file: {temp_query_audio_path}")
 
-    """
-    audio_path = f"../database/audios/{audio.filename}"
-    audio.save(audio_path)
-    return audio_path
+from pydub import AudioSegment
+import io
+
+def load_fileStorage(audio: FileStorage, path: str) -> str:
+    
+    # Read the file data into memory
+    file_bytes = audio.read()
+    
+    # Load the audio data regardless of the input format
+    # This automatically detects if it's webm, ogg, wav, etc.
+    audio_segment = AudioSegment.from_file(io.BytesIO(file_bytes))
+    
+    # Export as a standardized WAV
+    audio_segment.export(path, format="wav")
+    
+    logger.info(f"Audio file saved to {path}")
 
 def eval_revision(transcript: str, revision: str) -> float:
     """
