@@ -119,12 +119,18 @@ def generate_speech():
 @app.route("/api/speeches/acoustic_evaluation", methods=["POST"])
 def predict_acoustics_scores():
     # audio_path = cache_audios(request.files['audio'])
-    # load_fileStorage(request.files['query_audio'], '../database/audios/query_audio.wav')
-    # load_fileStorage(request.files['reference_audio'], '../database/audios/reference_audio.wav')
     try:
+        query_audio = request.files["query_audio"]
+        reference_audio = request.files["reference_audio"]
+        # # load audios for local testing 
+        # load_fileStorage(query_audio, '../database/audios/query_audio.wav')
+        # load_fileStorage(reference_audio, '../database/audios/reference_audio.wav')
+        # # reset file pointer to the beginning after saving
+        # query_audio.seek(0)
+        # reference_audio.seek(0)
         score = evaluate_audio_discrepancy(
-            request.files["query_audio"],
-            request.files["reference_audio"],
+            query_audio,
+            reference_audio,
             float(request.form.get("query_start", 0)),
         )
     except Exception as e:
