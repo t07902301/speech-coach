@@ -169,30 +169,6 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
       setIsPlaying(!isPlaying);
     }
   };
-  const mockSyncApi = async (formData) => {
-    // Extract data just to "see" it in the console
-    const offset = formData.get('delayOffset');
-    console.log(`Mock API received offset: ${offset}s`);
-  
-    // Simulate network latency (2 seconds)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  
-    // Simulate a random success or failure (optional)
-    const isSuccess = Math.random() > 0.9; // 10% success rate
-  
-    if (isSuccess) {
-      return {
-        ok: true,
-        json: async () => ({ message: "Sync successful!", offset: offset, score: 100 })
-      };
-    } else {
-      return {
-        ok: false,
-        status: 500,
-        json: async () => ({ error: "Internal Server Error" })
-      };
-    }
-  };
   const handleSubmitToAPI = async () => {
     // 1. Validate that we have both files
     if (!mainAudioUrl || !recordedUrl) {
@@ -205,38 +181,42 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
 
     // 2. Create the FormData payload
     const formData = new FormData();
-    
+
+    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+    // Note: Since we only have URLs, we need to fetch the blobs first
+    const referenceResponse = await fetch(mainAudioUrl);
+    const queryResponse = await fetch(recordedUrl);
+    if (!referenceResponse.ok || !queryResponse.ok) {
+      throw new Error('Failed to fetch audio files from URLs.');
+    }
+    const referenceBlob = await referenceResponse.blob();
+    const queryBlob = await queryResponse.blob();
+
+
     // Append the files
-    formData.append('mainAudio', mainAudioUrl);
-    formData.append('delayedAudio', recordedUrl);
+    formData.append('reference_audio', referenceBlob, 'reference.wav');
+    formData.append('query_audio', queryBlob, 'query.wav');
     
     // Append the final offset. (Backend usually expects strings or numbers)
-    formData.append('delayOffset', -offset); 
-
+    formData.append('query_start', -offset); 
     try {
-      // 3. Send the POST request to your backend
-      // Note: Do NOT manually set the 'Content-Type' header to 'multipart/form-data'. 
-      // The browser does this automatically and adds the necessary boundary string.
-      // const response = await fetch('https://your-backend-api.com/api/sync', {
-      //   method: 'POST',
-      //   body: formData, 
-      // });
+      const response = await fetch(BACKEND_URL + "/speeches/acoustic_evaluation", {
+          method: "POST",
+          body: formData,
+      });
 
-      const response = await mockSyncApi(formData);
+      if (response.ok) {
+          const result = await response.json();
+          setSubmitStatus(`✅ Successfully processed! Audio Discrepancy: ${result.score}`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      } else {
+          console.error('Acoustic Evaluation Error:', response.statusText);
+          setSubmitStatus('❌ Failed to upload. Check your connection or API.');
       }
-
-      const result = await response.json(); // Assuming your API returns JSON
-      console.log('Server response:', result);
-      
-      setSubmitStatus(`✅ Successfully processed! Score: ${result.score}`);
-
-    } catch (error) {
-      console.error('Submission failed:', error);
-      setSubmitStatus('❌ Failed to upload. Check your connection or API.');
-    } finally {
+  } catch (error) {
+      console.error('Error:', error);
+  } finally {
       setIsSubmitting(false);
     }
   };
