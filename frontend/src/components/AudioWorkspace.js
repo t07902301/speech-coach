@@ -169,7 +169,7 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
       setIsPlaying(!isPlaying);
     }
   };
-  const handleSubmitToAPI = async () => {
+  const handleEvaluation = async () => {
     // 1. Validate that we have both files
     if (!mainAudioUrl || !recordedUrl) {
       setSubmitStatus('Error: Please upload both files before submitting.');
@@ -212,10 +212,12 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
 
       } else {
           console.error('Acoustic Evaluation Error:', response.statusText);
+          alert(`Error ${response.status}: ${response.statusText}`);
           setSubmitStatus('❌ Failed to upload. Check your connection or API.');
       }
   } catch (error) {
       console.error('Error:', error);
+      alert(`An error occurred: ${error}`);
   } finally {
       setIsSubmitting(false);
     }
@@ -285,7 +287,7 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
       
       <p>Offset: {-offset.toFixed(2)} seconds</p>
       <button
-            onClick={handleSubmitToAPI}
+            onClick={handleEvaluation}
             disabled={isSubmitting || !mainAudioUrl || !recordedUrl}
             style={{
               padding: '12px 24px',
