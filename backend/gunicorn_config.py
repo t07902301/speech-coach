@@ -1,1 +1,1 @@
-import gunicorn
+import gunicorn # noqa

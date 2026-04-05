@@ -1,12 +1,19 @@
 import React, { useState, useRef } from 'react';
 import AcousticsVisual from './AcousticsVisual';
-const SpeechGenerator = () => {
+import { useEffect } from 'react';
+
+const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
     const [audioBlob, setAudioBlob] = useState(null);
     const textAreaRef = useRef(null);
     const [isLoading, setIsLoading] = useState(false);
     const selectedTextRef = useRef('');
-
+    useEffect(() => {
+        if (audioBlob) {
+            console.log('Audio blob updated, uplifting URL to Coordinator');
+            upliftReferenceSpeechURL(URL.createObjectURL(audioBlob));
+        }
+    }, [audioBlob]);
     const generateSpeech = async (textToSend) => {
         setIsLoading(true);
         try {
@@ -20,6 +27,7 @@ const SpeechGenerator = () => {
             }
             const data = await response.arrayBuffer();
             setAudioBlob(new Blob([data], { type: 'audio/wav' }));
+            console.log('Speech generated successfully');
         } catch (error) {
             alert('Error generating speech: ' + error.message);
             setAudioBlob(null);
