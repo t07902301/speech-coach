@@ -7,6 +7,7 @@ from flask_limiter import Limiter
 from flask_limiter.errors import RateLimitExceeded
 from flask_limiter.util import get_remote_address
 from utils import (
+    fake_clip_speech_to_text,
     clip_speech_to_text,
     eval_revision,
     evaluate_audio_discrepancy,
@@ -97,7 +98,7 @@ def transcribe_audio_clip():
     audio_file = request.files["audio"]
 
     try:
-        transcript_clips = clip_speech_to_text(audio_file)
+        transcript_clips = fake_clip_speech_to_text(audio_file)
         return jsonify({"transcription": transcript_clips}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

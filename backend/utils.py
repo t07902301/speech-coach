@@ -69,6 +69,7 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
         words = transcription.get("words", [])
         diarization_segments = []
 
+        # Iterate through the words and group them by speaker_id
         if words:
             # Initialize the current "buffer" with the first word
             current_segment_words = [words[0]]
@@ -117,16 +118,15 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     finally:
         os.remove(audio_path)
 
-    # import pickle as pkl
-    # try:
-    #     with open('../tests/audios/char_ts-diarization.pkl', 'rb') as file:
-    #         # 2. Load the data from the file
-    #         loaded_data = pkl.load(file)
-    #     return loaded_data
-    # except Exception as e:
-    #     raise Exception(str(e))
-    # finally:
-    #     os.remove(audio_path)
+def fake_clip_speech_to_text(audio: FileStorage, result_file: str = 'char_ts-diarization.pkl') -> List[dict]:
+    import pickle as pkl
+    try:
+        with open(result_file, 'rb') as file:
+            # 2. Load the data from the file
+            loaded_data = pkl.load(file)
+        return loaded_data['diarization_segments']
+    except Exception as e:
+        raise Exception(str(e))
 
 
 class TextRevision(BaseModel):

@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import MainPage from "./components/MainPage";
 import SampleReader from "./components/SampleReader";
-import AudioSelectinPlayer from "./components/AudioSelectionPlayer";
+import AudioSelectinPlayer from "./components/AudioSelectionPlayerRecorder";
 function App() {
   return (
     <Router>
