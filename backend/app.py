@@ -123,7 +123,17 @@ def predict_acoustics_scores():
     try:
         query_audio = request.files["query_audio"]
         reference_audio = request.files["reference_audio"]
-        # # load audios for local testing 
+        # 1. Get the raw strings
+        query_span_raw = request.form.get("query_span")
+        ref_span_raw = request.form.get("ref_span")
+
+        # 2. Safely parse
+        try:
+            query_span = json.loads(query_span_raw) if query_span_raw else {"start": 0, "end": 0}
+            ref_span = json.loads(ref_span_raw) if ref_span_raw else {"start": 0, "end": 0}
+        except json.JSONDecodeError:
+            return jsonify({"error": "Invalid JSON format in spans"}), 400
+        # # download audios for local testing 
         # load_fileStorage(query_audio, '../database/audios/query_audio.wav')
         # load_fileStorage(reference_audio, '../database/audios/reference_audio.wav')
         # # reset file pointer to the beginning after saving
@@ -132,7 +142,8 @@ def predict_acoustics_scores():
         score = evaluate_audio_discrepancy(
             query_audio,
             reference_audio,
-            float(request.form.get("query_start", 0)),
+            query_span=query_span,
+            ref_span=ref_span            
         )
     except Exception as e:
         abort(500, str(e))
