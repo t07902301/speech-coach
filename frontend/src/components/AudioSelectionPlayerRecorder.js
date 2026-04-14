@@ -26,8 +26,6 @@ const getFirstMatchIndex = (text, pattern) => {
 };
 const AudioSelectinPlayer = () => {
 
-  // ... inside your component:
-  
   // New States for Recording
   const [recordingIndex, setRecordingIndex] = useState(null);
   const [userRecordings, setUserRecordings] = useState({});
@@ -76,7 +74,7 @@ const AudioSelectinPlayer = () => {
     setRecordingIndex(null);
   };
   
-  const handleCompare = (index) => {
+  const handleCompare = async (index) => {
     const userAudioUrl = userRecordings[index];
     const originalSegment = transcriptionClips[index];
     
@@ -87,13 +85,57 @@ const AudioSelectinPlayer = () => {
     });
     
     // TODO: Implement your future comparison logic here (e.g., scoring, waveform diffing)
+    // 2. Create the FormData payload
+    const formData = new FormData();
+
+    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+    // Note: Since we only have URLs, we need to fetch the blobs first
+    const referenceResponse = await fetch(audioUrl); 
+    const queryResponse = await fetch(userAudioUrl);
+    if (!referenceResponse.ok || !queryResponse.ok) {
+      throw new Error('Failed to fetch audio files from URLs.');
+    }
+    const referenceBlob = await referenceResponse.blob();
+    const queryBlob = await queryResponse.blob();
+
+    // Append the files
+    formData.append('reference_audio', referenceBlob, 'reference.wav');
+    formData.append('query_audio', queryBlob, 'query.wav');
+    
+    // // Append the final offset. (Backend usually expects strings or numbers)
+    // formData.append('query_start', -offset); 
+    formData.append('ref_span', JSON.stringify({'start': selectionData.start, 'end': selectionData.end})); // Example of sending the selected text span timestamps
+
+    try {
+      const response = await fetch(BACKEND_URL + "/speeches/acoustic_evaluation", {
+          method: "POST",
+          body: formData,
+      });
+
+      if (response.ok) {
+          const result = await response.json();
+          console.log(`✅ Successfully processed! Audio Discrepancy: ${result.score}`);
+
+      } else {
+          console.error('Acoustic Evaluation Error:', response.statusText);
+          alert(`Error ${response.status}: ${response.statusText}`);
+          console.log('❌ Failed to upload. Check your connection or API.');
+      }
+  } catch (error) {
+      console.error('Error:', error);
+      alert(`An error occurred: ${error}`);
+  } 
+  // finally {
+  //     setIsSubmitting(false);
+  //   }
   };
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null); // URL for the player
   const [transcriptionClips, setTranscriptionClips] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectionData, setSelectionData] = useState(null);
+  const [selectionData, setSelectionData] = useState({});
 
   const audioRef = useRef(null); // Reference to the audio element
 
