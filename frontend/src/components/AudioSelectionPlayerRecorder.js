@@ -30,6 +30,10 @@ const AudioSelectinPlayer = () => {
   const [recordingIndex, setRecordingIndex] = useState(null);
   const [userRecordings, setUserRecordings] = useState({});
   const [showRecordingTools, setShowRecordingTools] = useState(false);
+
+  // State to track reference audio clip span for comparison
+  const [refSpanStart, setRefSpanStart] = useState(0);
+  const [refSpanEnd, setRefSpanEnd] = useState(0);
   
   // Refs to hold mutable recording instances
   const mediaRecorderRef = useRef(null);
@@ -105,8 +109,8 @@ const AudioSelectinPlayer = () => {
     
     // // Append the final offset. (Backend usually expects strings or numbers)
     // formData.append('query_start', -offset); 
-    formData.append('ref_span', JSON.stringify({'start': selectionData.start, 'end': selectionData.end})); // Example of sending the selected text span timestamps
-
+    formData.append('ref_span', JSON.stringify({'start': refSpanStart, 'end': refSpanEnd})); // Example of sending the selected text span timestamps
+    console.log("ref span: ", JSON.stringify({'start': refSpanStart, 'end': refSpanEnd}));
     try {
       const response = await fetch(BACKEND_URL + "/speeches/acoustic_evaluation", {
           method: "POST",
@@ -182,6 +186,8 @@ const AudioSelectinPlayer = () => {
   // 1. Function to play a specific segment with an end time
   const playClip = (startTime, endTime) => {
     if (audioRef.current) {
+      setRefSpanStart(startTime);
+      setRefSpanEnd(endTime);
       const audio = audioRef.current;
 
       // Jump to start and play
