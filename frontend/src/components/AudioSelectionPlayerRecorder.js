@@ -30,10 +30,6 @@ const AudioSelectinPlayer = () => {
   const [recordingIndex, setRecordingIndex] = useState(null);
   const [userRecordings, setUserRecordings] = useState({});
   const [showRecordingTools, setShowRecordingTools] = useState(false);
-
-  // State to track reference audio clip span for comparison
-  const [refSpanStart, setRefSpanStart] = useState(0);
-  const [refSpanEnd, setRefSpanEnd] = useState(0);
   
   // Refs to hold mutable recording instances
   const mediaRecorderRef = useRef(null);
@@ -88,6 +84,10 @@ const AudioSelectinPlayer = () => {
       userAudioUrl: userAudioUrl
     });
     
+    // Determine the reference span for comparison. If the user has made a text selection, use that; otherwise, use the full segment.
+    const refSpanStart = selectionData && selectionData.index === index ? selectionData.start : originalSegment.start;
+    const refSpanEnd = selectionData && selectionData.index === index ? selectionData.end : originalSegment.end;
+
     // TODO: Implement your future comparison logic here (e.g., scoring, waveform diffing)
     // 2. Create the FormData payload
     const formData = new FormData();
@@ -186,8 +186,6 @@ const AudioSelectinPlayer = () => {
   // 1. Function to play a specific segment with an end time
   const playClip = (startTime, endTime) => {
     if (audioRef.current) {
-      setRefSpanStart(startTime);
-      setRefSpanEnd(endTime);
       const audio = audioRef.current;
 
       // Jump to start and play
