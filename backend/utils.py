@@ -118,13 +118,13 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     finally:
         os.remove(audio_path)
 
-def fake_clip_speech_to_text(audio: FileStorage, result_file: str = 'char_ts-diarization.pkl') -> List[dict]:
+def fake_clip_speech_to_text(audio: FileStorage, result_file: str = '../tests/audios/char_ts-diarization.pkl') -> List[dict]:
     import pickle as pkl
     try:
         with open(result_file, 'rb') as file:
             # 2. Load the data from the file
             loaded_data = pkl.load(file)
-        return loaded_data['diarization_segments']
+        return loaded_data
     except Exception as e:
         raise Exception(str(e))
 
@@ -233,7 +233,7 @@ def generateFileStorage(name: str) -> FileStorage:
 
 
 def evaluate_audio_discrepancy(
-    query_audio: FileStorage, ref_audio: FileStorage, query_start: float = None
+    query_audio: FileStorage, ref_audio: FileStorage, ref_span: dict, query_span: dict = None
 ) -> float:
     """
     Get the discrepancy score between a query and a reference audio.\n Trim the query audio when query_start is indicated. \n
@@ -243,16 +243,31 @@ def evaluate_audio_discrepancy(
     url = f"{ACOUSTIC_URL}/api/discrepancy_score"
     headers = {}
     temp_query_audio_path = ""
+    temp_ref_audio_path = ""
+    logger.info(f"Evaluating audio discrepancy with query_span: {query_span} and ref_span: {ref_span}")
     try:
-        if query_start is not None and query_start > 0:
-            logger.info(f"Trimming query audio from {query_start} seconds.")
-            temp_query_audio_path = tempfile.NamedTemporaryFile(
-                delete=False, suffix=os.path.splitext(query_audio.filename)[1]
-            ).name  # Create a temporary file sharing the same extension as the input audio file
+        if ref_span is not None:
+            ref_start = ref_span.get("start", 0)
+            ref_end = ref_span.get("end", None)
+            if ref_start > 0:
+                logger.info(f"Trimming reference audio from {ref_start} seconds.")
+                temp_ref_audio_path = tempfile.NamedTemporaryFile(
+                    delete=False, suffix=os.path.splitext(ref_audio.filename)[1]
+                ).name
+                trim_audio(ref_audio, temp_ref_audio_path, ref_start, ref_end)
+                ref_audio = generateFileStorage(temp_ref_audio_path)
+        if query_span is not None:
+            query_start = query_span.get("start", 0)
+            query_end = query_span.get("end", None)
+            if query_start > 0:
+                logger.info(f"Trimming query audio from {query_start} seconds.")
+                temp_query_audio_path = tempfile.NamedTemporaryFile(
+                    delete=False, suffix=os.path.splitext(query_audio.filename)[1]
+                ).name  # Create a temporary file sharing the same extension as the input audio file
 
-            trim_audio(query_audio, temp_query_audio_path, query_start)
+                trim_audio(query_audio, temp_query_audio_path, query_start, query_end)
 
-            query_audio = generateFileStorage(temp_query_audio_path)
+                query_audio = generateFileStorage(temp_query_audio_path)
 
         response = requests.request(
             "POST",
@@ -270,9 +285,12 @@ def evaluate_audio_discrepancy(
     except Exception as e:
         raise Exception(str(e))
     finally:
-        if query_start is not None and os.path.exists(temp_query_audio_path):
+        if query_span is not None and os.path.exists(temp_query_audio_path):
             os.remove(temp_query_audio_path)
             logger.info(f"Removed temporary query audio file: {temp_query_audio_path}")
+        if ref_span is not None and os.path.exists(temp_ref_audio_path):
+            os.remove(temp_ref_audio_path)
+            logger.info(f"Removed temporary reference audio file: {temp_ref_audio_path}")
 
 
 def load_fileStorage(audio: FileStorage, path: str) -> str:
