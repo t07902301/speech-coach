@@ -118,13 +118,13 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     finally:
         os.remove(audio_path)
 
-def fake_clip_speech_to_text(audio: FileStorage, result_file: str = 'char_ts-diarization.pkl') -> List[dict]:
+def fake_clip_speech_to_text(audio: FileStorage, result_file: str = '../tests/audios/char_ts-diarization.pkl') -> List[dict]:
     import pickle as pkl
     try:
         with open(result_file, 'rb') as file:
             # 2. Load the data from the file
             loaded_data = pkl.load(file)
-        return loaded_data['diarization_segments']
+        return loaded_data
     except Exception as e:
         raise Exception(str(e))
 
