@@ -111,6 +111,8 @@ const AudioSelectinPlayer = () => {
     // formData.append('query_start', -offset); 
     formData.append('ref_span', JSON.stringify({'start': refSpanStart, 'end': refSpanEnd})); // Example of sending the selected text span timestamps
     console.log("ref span: ", JSON.stringify({'start': refSpanStart, 'end': refSpanEnd}));
+    formData.append('query_span', JSON.stringify({'start': -offset})); 
+    console.log("query span: ", JSON.stringify({'start': -offset}));
     try {
       const response = await fetch(BACKEND_URL + "/speeches/acoustic_evaluation", {
           method: "POST",
@@ -228,23 +230,20 @@ const AudioSelectinPlayer = () => {
       const selection = window.getSelection();
       const selectedText = selection.toString();
       
-      if (!selectedText) {
-        setSelectionData(null);
-        return;
-      }
+      if (selectedText.length > 0) {
+        const matchIndex = getFirstMatchIndex(transcription.text, selectedText);
   
-      const matchIndex = getFirstMatchIndex(transcription.text, selectedText);
-  
-      if (matchIndex !== -1 && transcription.characters) {
-        const startTimestamp = transcription.characters[matchIndex].start;
-        const endTimestamp = transcription.characters[matchIndex + selectedText.length - 1].end;
-  
-        setSelectionData({
-          start: startTimestamp,
-          end: endTimestamp,
-          text: selectedText,
-          index: index
-        });
+        if (matchIndex !== -1 && transcription.characters) {
+          const startTimestamp = transcription.characters[matchIndex].start;
+          const endTimestamp = transcription.characters[matchIndex + selectedText.length - 1].end;
+    
+          setSelectionData({
+            start: startTimestamp,
+            end: endTimestamp,
+            text: selectedText,
+            index: index
+          });
+        }
       }
     };
   

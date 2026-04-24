@@ -231,10 +231,9 @@ def generateFileStorage(name: str) -> FileStorage:
     )
     return audio_file_storage
 
-
+import json
 def evaluate_audio_discrepancy(
-    query_audio: FileStorage, ref_audio: FileStorage, ref_span: dict, query_span: dict = None
-) -> float:
+    query_audio: FileStorage, ref_audio: FileStorage, query_span: dict = None, ref_span: dict = None) -> float:
     """
     Get the discrepancy score between a query and a reference audio.\n Trim the query audio when query_start is indicated. \n
     """
@@ -242,56 +241,20 @@ def evaluate_audio_discrepancy(
     # url = "http://speech_assessment-models-1:6000/api/discrepancy_score"
     url = f"{ACOUSTIC_URL}/api/discrepancy_score"
     headers = {}
-    temp_query_audio_path = ""
-    temp_ref_audio_path = ""
     logger.info(f"Evaluating audio discrepancy with query_span: {query_span} and ref_span: {ref_span}")
-    try:
-        if ref_span is not None:
-            ref_start = ref_span.get("start", 0)
-            ref_end = ref_span.get("end", None)
-            if ref_start > 0:
-                logger.info(f"Trimming reference audio from {ref_start} seconds.")
-                temp_ref_audio_path = tempfile.NamedTemporaryFile(
-                    delete=False, suffix=os.path.splitext(ref_audio.filename)[1]
-                ).name
-                trim_audio(ref_audio, temp_ref_audio_path, ref_start, ref_end)
-                ref_audio = generateFileStorage(temp_ref_audio_path)
-        if query_span is not None:
-            query_start = query_span.get("start", 0)
-            query_end = query_span.get("end", None)
-            if query_start > 0:
-                logger.info(f"Trimming query audio from {query_start} seconds.")
-                temp_query_audio_path = tempfile.NamedTemporaryFile(
-                    delete=False, suffix=os.path.splitext(query_audio.filename)[1]
-                ).name  # Create a temporary file sharing the same extension as the input audio file
-
-                trim_audio(query_audio, temp_query_audio_path, query_start, query_end)
-
-                query_audio = generateFileStorage(temp_query_audio_path)
-
-        response = requests.request(
-            "POST",
-            url,
-            headers=headers,
-            files={
-                "query_audio": (query_audio.filename, query_audio),
-                "reference_audio": (ref_audio.filename, ref_audio),
-            },
-        )
-        if response.status_code != 200:
-            raise Exception(f"Acoustic evaluation API error: {response.text}")
-        return round(response.json()["score"], 2)
-
-    except Exception as e:
-        raise Exception(str(e))
-    finally:
-        if query_span is not None and os.path.exists(temp_query_audio_path):
-            os.remove(temp_query_audio_path)
-            logger.info(f"Removed temporary query audio file: {temp_query_audio_path}")
-        if ref_span is not None and os.path.exists(temp_ref_audio_path):
-            os.remove(temp_ref_audio_path)
-            logger.info(f"Removed temporary reference audio file: {temp_ref_audio_path}")
-
+    response = requests.request(
+        "POST",
+        url,
+        headers=headers,
+        files={
+            "query_audio": (query_audio.filename, query_audio),
+            "reference_audio": (ref_audio.filename, ref_audio),
+        },
+        data= {"query_span": json.dumps(query_span) if query_span else "", "ref_span": json.dumps(ref_span) if ref_span else ""}
+    )
+    if response.status_code != 200:
+        raise Exception(f"Acoustic evaluation API error: {response.text}")
+    return round(response.json()["score"], 2)
 
 def load_fileStorage(audio: FileStorage, path: str) -> str:
     # Read the file data into memory

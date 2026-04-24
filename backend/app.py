@@ -124,13 +124,13 @@ def predict_acoustics_scores():
         query_audio = request.files["query_audio"]
         reference_audio = request.files["reference_audio"]
         # 1. Get the raw strings
-        query_span_raw = request.form.get("query_span")
-        ref_span_raw = request.form.get("ref_span")
+        query_span_raw = request.form.get("query_span", "")
+        ref_span_raw = request.form.get("ref_span", "")
 
         # 2. Safely parse
         try:
-            query_span = json.loads(query_span_raw) if query_span_raw else {"start": 0, "end": 0}
-            ref_span = json.loads(ref_span_raw) if ref_span_raw else {"start": 0, "end": 0}
+            query_span = json.loads(query_span_raw) if query_span_raw else None
+            ref_span = json.loads(ref_span_raw) if ref_span_raw else None
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON format in spans"}), 400
         # # download audios for local testing 
