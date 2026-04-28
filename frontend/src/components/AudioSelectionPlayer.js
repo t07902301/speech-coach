@@ -30,6 +30,7 @@ const AudioSelectinPlayer = () => {
   const [transcriptionClips, setTranscriptionClips] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectionData, setSelectionData] = useState(null);
+  const [clipOption, setClipOption] = useState('speaker'); // 'speaker' or 'sentence'
 
   const audioRef = useRef(null); // Reference to the audio element
 
@@ -53,6 +54,12 @@ const AudioSelectinPlayer = () => {
     formData.append('audio', selectedFile);
 
     try {
+      if (clipOption === 'speaker') {
+        formData.append('clip_option', 'speaker');
+      }
+      else {
+        formData.append('clip_option', 'sentence');
+      }
       const response = await fetch(BACKEND_URL + '/speeches/transcription_clips', {
         method: 'POST',
         body: formData,
@@ -149,6 +156,27 @@ const AudioSelectinPlayer = () => {
           <audio ref={audioRef} src={audioUrl} controls style={styles.audioPlayer} />
         </div>
       )}
+
+      <div style={styles.optionsContainer}>
+        <label>
+          <input 
+            type="radio" 
+            name="clipOption" 
+            value="speaker" 
+            onChange={() => setClipOption("speaker")} 
+          />
+          Speaker-based Clipping
+        </label>
+        <label>
+          <input 
+            type="radio" 
+            name="clipOption" 
+            value="sentence" 
+            onChange={() => setClipOption("sentence")} 
+          />
+          Sentence-based Clipping
+        </label>
+      </div>
 
       <button onClick={handleUpload} disabled={!selectedFile || isLoading}>
         {isLoading ? 'Processing...' : 'Transcribe & Clip'}
