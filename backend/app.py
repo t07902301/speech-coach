@@ -8,6 +8,7 @@ from flask_limiter.errors import RateLimitExceeded
 from flask_limiter.util import get_remote_address
 from utils import (
     clip_speech_to_text,
+    speech_to_text_group_sentence,
     eval_revision,
     evaluate_audio_discrepancy,
     load_fileStorage,
@@ -96,8 +97,13 @@ def transcribe_audio_clip():
 
     audio_file = request.files["audio"]
 
+    clip_option = request.form.get("clip_option", "sentence")  # default to sentence if not provided
+
     try:
-        transcript_clips = clip_speech_to_text(audio_file)
+        if clip_option == "sentence":
+            transcript_clips = speech_to_text_group_sentence(audio_file)
+        else:
+            transcript_clips = clip_speech_to_text(audio_file)
         return jsonify({"transcription": transcript_clips}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

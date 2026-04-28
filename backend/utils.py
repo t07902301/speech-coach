@@ -45,8 +45,50 @@ def speech_to_text(audio: FileStorage):
     finally:
         os.remove(audio_path)
 
+def speech_to_text_group_sentence(audio: FileStorage) -> List[dict]:
+    """
+    Group the transcription result into sentences based on punctuation. Each sentence will have its own start and end timestamps, as well as character-level timestamps for each character in the sentence. \n
+    """
+    elevenlabs = ElevenLabs(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
+    )
+    audio_path = tempfile.NamedTemporaryFile(
+        delete=False, suffix=os.path.splitext(audio.filename)[1]
+    ).name  # Create a temporary file sharing the same extension as the input audio file
+    audio.save(audio_path)  # Save the FileStorage Object to the temporary file
+
+    audio_file = open(audio_path, "rb")
+
+    try:
+        transcription = elevenlabs.speech_to_text.convert(
+            file=audio_file,
+            model_id="scribe_v1",  # Model to use
+            tag_audio_events=True,  # Tag audio events like laughter, applause, etc.
+            timestamps_granularity="character",
+            diarize=False,
+        ).model_dump(mode="json")
+        sentences = []
+        current_sentence = []
+        for word in transcription['words']:
+            current_sentence.append(word)
+            if word['text'].endswith(('.', '!', '?')):
+                sentences.append({
+                    "start": current_sentence[0]['start'],
+                    "end": current_sentence[-1]['end'],
+                    "text": ' '.join(w['text'] for w in current_sentence),
+                    "characters": [c for w in current_sentence for c in w['characters']]
+                })
+                current_sentence = []
+        return sentences
+    except Exception as e:
+        raise Exception(str(e))
+    finally:
+        os.remove(audio_path)
 
 def clip_speech_to_text(audio: FileStorage) -> List[dict]:
+    """
+    Group the transcription result into clips based on speaker diarization. Each clip will have its own start and end timestamps, as well as character-level timestamps for each character in the clip. \n
+    """
     elevenlabs = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
