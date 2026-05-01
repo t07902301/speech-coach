@@ -75,7 +75,7 @@ def speech_to_text_group_sentence(audio: FileStorage) -> List[dict]:
                 sentences.append({
                     "start": current_sentence[0]['start'],
                     "end": current_sentence[-1]['end'],
-                    "text": ' '.join(w['text'] for w in current_sentence),
+                    "text": "".join(w['text'] for w in current_sentence).lstrip(),
                     "characters": [c for w in current_sentence for c in w['characters']]
                 })
                 current_sentence = []
