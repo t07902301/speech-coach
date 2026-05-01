@@ -125,24 +125,23 @@ const AudioSelectinPlayer = () => {
       const selection = window.getSelection();
       const selectedText = selection.toString();
       
-      if (!selectedText) {
-        setSelectionData(null);
-        return;
+      if (selectedText.length > 0){
+        const matchIndex = getFirstMatchIndex(transcription.text, selectedText);
+  
+        if (matchIndex !== -1 && transcription.characters) {
+          const startTimestamp = transcription.characters[matchIndex].start;
+          const endTimestamp = transcription.characters[matchIndex + selectedText.length - 1].end;
+    
+          setSelectionData({
+            start: startTimestamp,
+            end: endTimestamp,
+            text: selectedText,
+            index: index
+          });
+
+        }
       }
-  
-      const matchIndex = getFirstMatchIndex(transcription.text, selectedText);
-  
-      if (matchIndex !== -1 && transcription.characters) {
-        const startTimestamp = transcription.characters[matchIndex].start;
-        const endTimestamp = transcription.characters[matchIndex + selectedText.length - 1].end;
-  
-        setSelectionData({
-          start: startTimestamp,
-          end: endTimestamp,
-          text: selectedText,
-          index: index
-        });
-      }
+
     };
   
   return (
