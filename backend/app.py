@@ -14,6 +14,7 @@ from utils import (
     load_fileStorage,
     speech_to_text,
     text_to_text,
+    text_to_speech_multilingual
 )
 
 import redis  # noqa
@@ -111,14 +112,13 @@ def transcribe_audio_clip():
 
 @app.route("/api/speeches/generate/synthesis", methods=["POST"])
 def generate_speech():
-    # data = json.loads(request.data)
+    data = json.loads(request.data)
     try:
-        # audio_data = text_to_speech(data["text"])
-        with open("generated.wav", "rb") as f:
-            audio_data = f.read()
+        audio_data = text_to_speech_multilingual(data["text"], data.get("language", "en"))
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
     return app.response_class(audio_data, mimetype="audio/wav")
 
 
