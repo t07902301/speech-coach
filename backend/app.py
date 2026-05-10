@@ -113,13 +113,19 @@ def transcribe_audio_clip():
 @app.route("/api/speeches/generate/synthesis", methods=["POST"])
 def generate_speech():
     data = json.loads(request.data)
+    app.logger.info(f"Received synthesis request with data: {data}")
     try:
-        audio_data = text_to_speech_multilingual(data["text"], data.get("language", "en"))
+        synthesis_result = text_to_speech_multilingual(data["text"], data["language"])
+        audio_data = synthesis_result["audio"]
+        characters = synthesis_result["characters"]
+        return jsonify({
+                "audio": audio_data,
+                "characters": characters
+            })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-    return app.response_class(audio_data, mimetype="audio/wav")
+
 
 
 @app.route("/api/speeches/acoustic_evaluation", methods=["POST"])

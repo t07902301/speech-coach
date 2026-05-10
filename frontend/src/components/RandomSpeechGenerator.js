@@ -7,6 +7,8 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
     const [audioBlob, setAudioBlob] = useState(null);
     const textAreaRef = useRef(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [characters, setCharacters] = useState([]); // For character-level timing metadata
+
     const selectedTextRef = useRef('');
     useEffect(() => {
         if (audioBlob) {
@@ -19,14 +21,26 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
         try {
             const response = await fetch(BACKEND_URL + '/speeches/generate/synthesis', {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ text: textToSend })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: textToSend, language: "fr" })
             });
             if (!response.ok) {
                 throw new Error(response.statusText);
             }
-            const data = await response.arrayBuffer();
-            setAudioBlob(new Blob([data], { type: 'audio/wav' }));
+            const data = await response.json();
+            // 1. Handle the Characters (Metadata)
+            const characterTimings = data.characters; 
+            setCharacters(characterTimings); // Store this to map highlights to audio.currentTime
+            console.log('Character timings received: ', characterTimings);
+
+            // 2. Handle the Audio (Base64 to Blob)
+            const binaryString = atob(data.audio_base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }            
+            setAudioBlob(new Blob([data], { type: 'audio/wav' }));         
             console.log('Speech generated successfully');
         } catch (error) {
             alert('Error generating speech: ' + error.message);
@@ -62,13 +76,13 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
             <button onClick={handleButtonClick} style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
                 {isLoading ? 'Loading...' : 'Sample Reading'}
             </button>
-
-            {/* {selectedTextRef.current && (
-                <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px', width: '80%' }}>
-                    <strong>Selected Text:</strong> {selectedTextRef.current}
-                </div>
-            )} */}
             <AcousticsVisual audioBlob={audioBlob} waveform_id="random-speech-synthesis"/>
+
+            {selectedTextRef.current && (
+                <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px', width: '80%' }}>
+                    {selectedTextRef.current}
+                </div>
+            )}            
         </div>
     );
 };
