@@ -232,8 +232,19 @@ def text_to_speech(input_text):
     # logging.info(f"Generated audio file saved at {audio_path}")
     return response.read()
 
+def text_to_speech_multilingual(input_text: str, language_code: str):
 
-
+    client = ElevenLabs(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
+    )
+    reps = client.text_to_speech.convert(
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        output_format="mp3_44100_128",
+        text=input_text,
+        model_id="eleven_flash_v2_5",
+        language_code=language_code
+    )
+    return reps
 
 def trim_audio(
     input_file: str, output_file: str, start_sec: float, end_sec: float = None
