@@ -1,8 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 
-function AudioSnippetPlayer({ base64Audio, timeRange }) {
+function AudioSnippetPlayer({ audio_url, timeRange }) {
   const audioRef = useRef(null);
-  const audioSrc = `data:audio/wav;base64,${base64Audio}`;
 
   const playSnippet = () => {
     const audio = audioRef.current;
@@ -40,7 +39,7 @@ function AudioSnippetPlayer({ base64Audio, timeRange }) {
     <div style={{ marginTop: '20px' }}>
       <audio 
         ref={audioRef} 
-        src={audioSrc} 
+        src={audio_url} 
         controls
         style={styles.audioPlayer}
       />
