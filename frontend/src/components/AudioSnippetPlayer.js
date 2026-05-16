@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 
-function AudioSnippetPlayer({ audio_url, timeRange }) {
+function AudioSnippetPlayer({ audioUrl, timeRange }) {
   const audioRef = useRef(null);
 
   const playSnippet = () => {
@@ -39,7 +39,7 @@ function AudioSnippetPlayer({ audio_url, timeRange }) {
     <div style={{ marginTop: '20px' }}>
       <audio 
         ref={audioRef} 
-        src={audio_url} 
+        src={audioUrl} 
         controls
         style={styles.audioPlayer}
       />

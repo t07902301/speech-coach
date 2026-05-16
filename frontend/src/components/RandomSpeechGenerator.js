@@ -10,7 +10,7 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
     const textAreaRef = useRef(null);
     const [isLoading, setIsLoading] = useState(false);
     const [characters, setCharacters] = useState([]); // For character-level timing metadata
-    const [timeRange, setTimeRange] = useState({ start: 0, end: 0, text: "" });
+    const [timeRange, setTimeRange] = useState({ start: 0, end: 0 });
 
     useEffect(() => {
         if (audioUrl !== '') {
@@ -32,6 +32,8 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
             const data = await response.json();
             setAudioUrl(`data:audio/wav;base64,${data.audio}`); // Store the URL for the audio player
             setCharacters(data.characters); // Store character timings for mapping highlights
+            let endTime = data.characters.length > 0 ? data.characters[data.characters.length - 1].end : 0;
+            setTimeRange({ start: 0, end: endTime}); // Initialize time range to full length
 
             console.log('Speech generated successfully');
         } catch (error) {
@@ -61,7 +63,7 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
                 {isLoading ? 'Loading...' : 'Sample Reading'}
             </button>
             <TextSelector timestamps={characters} onRangeSelected={setTimeRange} />
-            {base64Audio && <AudioSnippetPlayer base64Audio={base64Audio} timeRange={timeRange} />}
+            {audioUrl && <AudioSnippetPlayer audioUrl={audioUrl} timeRange={timeRange} />}
         </div>
     );
 };
