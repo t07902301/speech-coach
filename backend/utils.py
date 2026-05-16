@@ -152,7 +152,6 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
                     }
                 )
             return diarization_segments
-        else:
             raise Exception("No words are found in the transcription.")
     except Exception as e:
         raise Exception(str(e))
@@ -165,7 +164,6 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     #         # 2. Load the data from the file
     #         loaded_data = pkl.load(file)
     #     return loaded_data
-    # except Exception as e:
     #     raise Exception(str(e))
     # finally:
     #     os.remove(audio_path)
@@ -178,9 +176,7 @@ class TextRevision(BaseModel):
 # Function to encode the image
 def encode_image(image: FileStorage):
     return base64.b64encode(image.stream.read()).decode("utf-8")
-    # with open(image_path, "rb") as image_file:
     #     return base64.b64encode(image_file.read()).decode("utf-8")
-
 
 def text_to_text(text, image: FileStorage = None, customized_prompt=None):
     client = OpenAI(api_key=API_KEY)
@@ -233,18 +229,40 @@ def text_to_speech(input_text):
     return response.read()
 
 def text_to_speech_multilingual(input_text: str, language_code: str):
+    logger.info(f"Generating speech for text: {input_text} with language code: {language_code}")
 
     client = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
-    reps = client.text_to_speech.convert(
+    logger.info("Initialized ElevenLabs client.")
+    reps = client.text_to_speech.convert_with_timestamps(
         voice_id="JBFqnCBsd6RMkjVDRZzb",
         output_format="mp3_44100_128",
         text=input_text,
         model_id="eleven_flash_v2_5",
-        language_code=language_code
+        language_code="fr"
     )
-    return reps
+    logger.info("Received response from ElevenLabs text-to-speech API.")
+
+    # Extract the alignment data for easier access
+    alignment = reps.alignment
+
+    # Use zip to combine the three lists into the new structure
+    mapped_characters = [
+        {
+            "text": char, 
+            "start": start, 
+            "end": end
+        }
+        for char, start, end in zip(
+            alignment.characters, 
+            alignment.character_start_times_seconds, 
+            alignment.character_end_times_seconds
+        )
+    ]
+
+    # Wrap it in the final dictionary format
+    return {"characters": mapped_characters, "audio": reps.audio_base_64}
 
 def trim_audio(
     input_file: str, output_file: str, start_sec: float, end_sec: float = None
@@ -284,7 +302,6 @@ def generateFileStorage(name: str) -> FileStorage:
     )
     return audio_file_storage
 
-
 def evaluate_audio_discrepancy(
     query_audio: FileStorage, ref_audio: FileStorage, query_start: float = None
 ) -> float:
@@ -319,7 +336,6 @@ def evaluate_audio_discrepancy(
         if response.status_code != 200:
             raise Exception(f"Acoustic evaluation API error: {response.text}")
         return round(response.json()["score"], 2)
-
     except Exception as e:
         raise Exception(str(e))
     finally:

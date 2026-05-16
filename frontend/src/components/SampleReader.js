@@ -8,7 +8,6 @@ const SampleReader = () => {
     const [reference_speech_url, setReferenceSpeechURL] = React.useState("");
     const upliftReferenceSpeechURL = (reference_speech_url) => {
         setReferenceSpeechURL(reference_speech_url);
-        logger.log("Reference Speech URL uplifted to Coordinator: ", reference_speech_url);
     };
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', height: '100vh', paddingTop: '20px' }}>
