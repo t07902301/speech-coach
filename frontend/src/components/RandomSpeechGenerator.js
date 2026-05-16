@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import AcousticsVisual from './AcousticsVisual';
 import { useEffect } from 'react';
+import AudioPlayerBase64 from './AudioPlayerBase64';
 
 const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -8,6 +9,7 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
     const textAreaRef = useRef(null);
     const [isLoading, setIsLoading] = useState(false);
     const [characters, setCharacters] = useState([]); // For character-level timing metadata
+    const [base64Audio, setBase64Audio] = useState(null); // Store base64 audio for the player
     const [audioUrl, setAudioUrl] = useState(null);
     const audioRef = useRef(null); // Reference to the audio element
     const selectedTextRef = useRef(''); // To store the currently selected text
@@ -31,22 +33,13 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
             if (!response.ok) {
                 throw new Error(response.statusText);
             }
-            // const data = await response.json();
-            // // 1. Handle the Characters (Metadata)
-            // const characterTimings = data.characters; 
-            // setCharacters(characterTimings); // Store this to map highlights to audio.currentTime
-            // console.log('Character timings received: ', characterTimings);
+            const data = await response.json();
+            setBase64Audio(data.audio); // Store base64 audio for the player
+            setCharacters(data.characters); // Store character timings for mapping highlights
 
-            // // 2. Handle the Audio (Base64 to Blob)
-            // const binaryString = atob(data.audio_base64);
-            // const len = binaryString.length;
-            // const bytes = new Uint8Array(len);
-            // for (let i = 0; i < len; i++) {
-            //     bytes[i] = binaryString.charCodeAt(i);
-            // }            
+            // const data = await response.arrayBuffer();
+            // setAudioBlob(new Blob([data], { type: 'audio/wav' }));   
 
-            const data = await response.arrayBuffer();
-            setAudioBlob(new Blob([data], { type: 'audio/wav' }));         
             console.log('Speech generated successfully');
         } catch (error) {
             alert('Error generating speech: ' + error.message);
@@ -81,11 +74,12 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
                 {isLoading ? 'Loading...' : 'Sample Reading'}
             </button>
             {/* 2. Reference Audio Player */}
-            {audioUrl && (
+            {/* {audioUrl && (
                 <div style={styles.playerContainer}>
                     <audio src={audioUrl} controls style={styles.audioPlayer} />
                 </div>
-            )}
+            )} */}
+            <AudioPlayerBase64 base64Audio={base64Audio} characters={characters} />
             {/* {selectedTextRef.current && (
                 <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px', width: '80%' }}>
                     {selectedTextRef.current}
