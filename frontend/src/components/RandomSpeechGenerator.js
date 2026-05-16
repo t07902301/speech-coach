@@ -8,12 +8,16 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
     const textAreaRef = useRef(null);
     const [isLoading, setIsLoading] = useState(false);
     const [characters, setCharacters] = useState([]); // For character-level timing metadata
+    const [audioUrl, setAudioUrl] = useState(null);
+    const audioRef = useRef(null); // Reference to the audio element
+    const selectedTextRef = useRef(''); // To store the currently selected text
 
-    const selectedTextRef = useRef('');
     useEffect(() => {
         if (audioBlob) {
             console.log('Audio blob updated, uplifting URL to Coordinator');
-            upliftReferenceSpeechURL(URL.createObjectURL(audioBlob));
+            let ref_audio_url = URL.createObjectURL(audioBlob);
+            upliftReferenceSpeechURL(ref_audio_url);
+            setAudioUrl(ref_audio_url);
         }
     }, [audioBlob]);
     const generateSpeech = async (textToSend) => {
@@ -27,19 +31,21 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
             if (!response.ok) {
                 throw new Error(response.statusText);
             }
-            const data = await response.json();
-            // 1. Handle the Characters (Metadata)
-            const characterTimings = data.characters; 
-            setCharacters(characterTimings); // Store this to map highlights to audio.currentTime
-            console.log('Character timings received: ', characterTimings);
+            // const data = await response.json();
+            // // 1. Handle the Characters (Metadata)
+            // const characterTimings = data.characters; 
+            // setCharacters(characterTimings); // Store this to map highlights to audio.currentTime
+            // console.log('Character timings received: ', characterTimings);
 
-            // 2. Handle the Audio (Base64 to Blob)
-            const binaryString = atob(data.audio_base64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }            
+            // // 2. Handle the Audio (Base64 to Blob)
+            // const binaryString = atob(data.audio_base64);
+            // const len = binaryString.length;
+            // const bytes = new Uint8Array(len);
+            // for (let i = 0; i < len; i++) {
+            //     bytes[i] = binaryString.charCodeAt(i);
+            // }            
+
+            const data = await response.arrayBuffer();
             setAudioBlob(new Blob([data], { type: 'audio/wav' }));         
             console.log('Speech generated successfully');
         } catch (error) {
@@ -52,20 +58,18 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
 
     const handleButtonClick = () => {
 
-        let textToSend = selectedTextRef.current;
-        if (!textToSend && textAreaRef.current) { // If no text is selected, use the text from the textarea
-            textToSend = textAreaRef.current.value;
-        }
-        if (textToSend) {
+        let textToSend = textAreaRef.current.value;
+        if (textToSend.trim() !== '') {
             generateSpeech(textToSend);
         } else {
-            alert('Please select some text to send.');
+            alert('Please write some text to generate speech.');
         }
     };
 
     const handleTextSelect = () => {
         const text = window.getSelection().toString();
         selectedTextRef.current = text;
+        console.log('Selected text: ', text);
     };
 
     return (
@@ -76,15 +80,23 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
             <button onClick={handleButtonClick} style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
                 {isLoading ? 'Loading...' : 'Sample Reading'}
             </button>
-            <AcousticsVisual audioBlob={audioBlob} waveform_id="random-speech-synthesis"/>
-
-            {selectedTextRef.current && (
+            {/* 2. Reference Audio Player */}
+            {audioUrl && (
+                <div style={styles.playerContainer}>
+                    <audio src={audioUrl} controls style={styles.audioPlayer} />
+                </div>
+            )}
+            {/* {selectedTextRef.current && (
                 <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px', width: '80%' }}>
                     {selectedTextRef.current}
                 </div>
-            )}            
+            )}             */}
         </div>
     );
 };
-
+const styles = {
+    container: { maxWidth: '600px', margin: '20px auto', fontFamily: 'sans-serif' },
+    playerContainer: { margin: '20px 0', padding: '15px', background: '#f0f0f0', borderRadius: '8px' },
+    audioPlayer: { width: '100%' },
+  };
 export default SpeechGenerator;
