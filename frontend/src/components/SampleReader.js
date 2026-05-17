@@ -1,8 +1,6 @@
 import SpeechGenerator from "./RandomSpeechGenerator";
-import SampleRecorder from "./SampleRecorder";
 import AudioWorkspace from "./AudioWorkspace";
 import React from 'react';
-import logger from "../utils/logger";
 
 const SampleReader = () => {
     const [reference_speech_url, setReferenceSpeechURL] = React.useState("");
