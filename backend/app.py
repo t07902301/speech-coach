@@ -3,9 +3,9 @@ import random
 
 from flask import Flask, abort, json, jsonify, render_template, request
 from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.errors import RateLimitExceeded
-from flask_limiter.util import get_remote_address
+# from flask_limiter import Limiter
+# from flask_limiter.errors import RateLimitExceeded
+# from flask_limiter.util import get_remote_address
 from utils import (
     clip_speech_to_text,
     speech_to_text_group_sentence,
@@ -21,12 +21,12 @@ import redis  # noqa
 
 app = Flask(__name__)
 
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["10 per day"],
-    storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
-)
+# limiter = Limiter(
+#     get_remote_address,
+#     app=app,
+#     default_limits=["10 per day"],
+#     storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
+# )
 
 cors = CORS(
     app,
@@ -180,6 +180,6 @@ def fake_transcribe():
     )
 
 
-@app.errorhandler(RateLimitExceeded)
-def ratelimit_handler(e):
-    return jsonify({"error": "Rate limit exceeded", "message": str(e.description)}), 429
+# @app.errorhandler(RateLimitExceeded)
+# def ratelimit_handler(e):
+#     return jsonify({"error": "Rate limit exceeded", "message": str(e.description)}), 429
