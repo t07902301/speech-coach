@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Multitrack from 'wavesurfer-multitrack';
 import AudioRecorder from "./AudioRecorder";
 
-const AudioWorkspace = ({ mainAudioUrl='' }) => {
+const AudioWorkspace = ({ mainAudioUrl='', refTimeRange={'start': 0, 'end': 0} }) => {
   // --- States ---
   const [isPlaying, setIsPlaying] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -71,6 +71,30 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
       }
     };
   }, [mainAudioUrl, recordedUrl]); // Triggers when audioUrls changes
+
+  // 2. Dynamic Synchronization: This effect fires EVERY TIME refTimeRange changes
+  useEffect(() => {
+    const multitrack = multitrackRef.current;
+    if (!multitrack || !refTimeRange.start && !refTimeRange.end) return;
+
+    // Find our specific track inside the live instance
+    const targetTrack = multitrack.tracks.find(t => t.id === 'text-aligned-track');
+    
+    if (targetTrack) {
+      // Direct updates to the track configuration properties
+      targetTrack.startCue = refTimeRange.start;
+      targetTrack.endCue = refTimeRange.end;
+
+      // Force wavesurfer-multitrack to re-calculate widths and physically redraw the slice
+      multitrack.rendering.setMainWidth(
+        multitrack.durations, 
+        multitrack.maxDuration
+      );
+
+      // Optional: Automatically jump the playhead back to the start of the new text selection
+      multitrack.setTime(0); 
+    }
+  }, [refTimeRange]); // 👈 Crucial: React watches this variable for changes
 
   // // --- Helper Controls ---
   const playMultitrack = () => {
@@ -144,7 +168,7 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
       {/* Multitrack Area */}
       <h3>Multitrack Editor</h3>
       {!recordedUrl && <p>Record some audio to see the multitrack effect!</p>}
-      <div ref={containerRef} style={{ width: '100%', minHeight: '200px' }}></div>
+      <div ref={containerRef} style={{ width: '80%', minHeight: '200px' }}></div>
       
       {recordedUrl && (
           <button
