@@ -103,34 +103,48 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
     const referenceBlob = await referenceResponse.blob();
     const queryBlob = await queryResponse.blob();
 
-
     // Append the files
-    formData.append('reference_audio', referenceBlob, 'reference.wav');
-    formData.append('query_audio', queryBlob, 'query.wav');
+    formData.append('reference_audio', referenceBlob);
+    formData.append('query_audio', queryBlob);
     
     // Append the final offset. (Backend usually expects strings or numbers)
     formData.append('query_start', -offset); 
-    try {
-      const response = await fetch(BACKEND_URL + "/speeches/acoustic_evaluation", {
-          method: "POST",
-          body: formData,
-      });
+try {
+    const response = await fetch(BACKEND_URL + "/speeches/acoustic_evaluation", {
+        method: "POST",
+        body: formData,
+    });
 
-      if (response.ok) {
-          const result = await response.json();
-          setSubmitStatus(`✅ Successfully processed! Audio Discrepancy: ${result.score}`);
+    if (response.ok) {
+        const result = await response.json();
+        setSubmitStatus(`✅ Successfully processed! Audio Discrepancy: ${result.score}`);
+    } else {
+        let errorMessage = response.statusText;
+        
+        try {
+            const errorData = await response.json();
+            
+            // Extract the message based on the global handler keys:
+            // errorData.description contains your specific Python str(e)
+            if (errorData && errorData.description) {
+                errorMessage = errorData.description;
+            } else if (errorData && errorData.message) {
+                errorMessage = errorData.message;
+            }
+        } catch (jsonErr) {
+            // Fallback if the response isn't JSON
+        }
 
-      } else {
-          console.error('Acoustic Evaluation Error:', response.statusText);
-          alert(`Error ${response.status}: ${response.statusText}`);
-          setSubmitStatus('❌ Failed to upload. Check your connection or API.');
-      }
-  } catch (error) {
-      console.error('Error:', error);
-      alert(`An error occurred: ${error}`);
-  } finally {
-      setIsSubmitting(false);
+        console.error('Acoustic Evaluation Error:', errorMessage);
+        alert(`Error ${response.status}: ${errorMessage}`);
+        setSubmitStatus(`❌ Failed: ${errorMessage}`);
     }
+} catch (error) {
+    console.error('Error:', error);
+    alert(`An error occurred: ${error.message || error}`);
+} finally {
+    setIsSubmitting(false);
+}
   };
 
   return (
