@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.4
 FROM --platform=$BUILDPLATFORM python:3.12.3 AS builder
-
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg
 RUN mkdir /backend
 WORKDIR /backend
 COPY requirements.txt /backend/requirements.txt

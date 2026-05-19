@@ -19,9 +19,12 @@ Right now, this app allows you to transcribe your voice recordings, polish trans
 <!-- ![Recording Transcription Screenshot](readme-images/recording-transcription.gif) -->
 <img src="readme-images/recording-transcription.gif" width="400">
 
-2. Shadow reading of any audio you upload or syntectic audios generated from any text you write! You can also challenge your listening skills by hiding transcriptions of your audios.  
+2. Shadow reading of any audio uploaded from your local file system or generated from any text you write! You can also challenge your listening skills by hiding transcriptions of your audios.  
 <!-- ![Audio Clip Screenshot](readme-images/audio-clips.png) -->
 <img src="readme-images/audio-clips.gif" width="400">
+
+3. Check how different your voice recording is from the reference audio intuitively with waveforms or quantitively by acoustic signal evaluation. 
+<img src="readme-images/eval-demo.gif" width="400">
 
 ## How It Works
 

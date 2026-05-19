@@ -1,25 +1,41 @@
 import os
-from flask import Flask, abort, request, jsonify, render_template
-from flask_cors import CORS
-from utils import text_to_speech, speech_to_text, acoustic_assess, text_to_text, store_audio, eval_revision, clip_speech_to_text
 import random
-
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_limiter.errors import RateLimitExceeded
-from flask import json
+import io
 from werkzeug.exceptions import HTTPException
-import redis
-app = Flask(__name__)
 
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["10 per day"],
-    storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
+from flask import Flask, abort, json, jsonify, render_template, request
+from flask_cors import CORS
+# from flask_limiter import Limiter
+# from flask_limiter.errors import RateLimitExceeded
+# from flask_limiter.util import get_remote_address
+from utils import (
+    clip_speech_to_text,
+    speech_to_text_group_sentence,
+    eval_revision,
+    evaluate_audio_discrepancy,
+    load_fileStorage,
+    speech_to_text,
+    text_to_text,
+    text_to_speech_multilingual
 )
 
-cors = CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")}})
+import redis  # noqa
+
+app = Flask(__name__)
+
+# limiter = Limiter(
+#     get_remote_address,
+#     app=app,
+#     default_limits=["10 per day"],
+#     storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
+# )
+
+cors = CORS(
+    app,
+    resources={
+        r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")}
+    },
+)
 
 
 @app.route("/api/speeches/audios", methods=["POST"])
@@ -28,7 +44,8 @@ def save_audio():
         return jsonify({"error": "No audio file provided"}), 400
     audio = request.files["audio"]
     try:
-        audio_path = store_audio(audio)
+        storage_path = os.path.join("database/audios", audio.filename)
+        load_fileStorage(audio, storage_path)
     except Exception as e:
         abort(500, str(e))
     # app.logger.info(audio.filename)
@@ -36,7 +53,9 @@ def save_audio():
     # # TODO external database
     # audio_path = os.path.join('../api_tests/audios', audio.filename)
     # audio.save(audio_path)
-    return jsonify({"message": "File saved successfully", "file_path": audio_path}), 200
+    return jsonify(
+        {"message": "File saved successfully", "file_path": storage_path}
+    ), 200
 
 
 @app.route("/api/speeches/transcriptions", methods=["POST"])
@@ -59,7 +78,9 @@ def revise_transcript():
     payload = request.form["payload"]
     payload = json.loads(payload)
     try:
-        response_text = text_to_text(payload["transcript"], image, payload["customized_prompt"])
+        response_text = text_to_text(
+            payload["transcript"], image, payload["customized_prompt"]
+        )
         revision_score = eval_revision(payload["transcript"], response_text)
     except Exception as e:
         abort(500, str(e))
@@ -70,46 +91,82 @@ def revise_transcript():
         }
     )
 
-@app.route('/api/speeches/transcription_clips', methods=['POST'])
+
+@app.route("/api/speeches/transcription_clips", methods=["POST"])
 def transcribe_audio_clip():
     # 1. Check if the file is part of the request
-    if 'audio' not in request.files:
+    if "audio" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
 
-    audio_file = request.files['audio']
-    
+    audio_file = request.files["audio"]
+
+    clip_option = request.form.get("clip_option", "sentence")  # default to sentence if not provided
+
     try:
-        transcript_clips = clip_speech_to_text(audio_file)
+        if clip_option == "sentence":
+            transcript_clips = speech_to_text_group_sentence(audio_file)
+        else:
+            transcript_clips = clip_speech_to_text(audio_file)
         return jsonify({"transcription": transcript_clips}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
 @app.route("/api/speeches/generate/synthesis", methods=["POST"])
 def generate_speech():
     data = json.loads(request.data)
+    app.logger.info(f"Received synthesis request with data: {data}")
     try:
-        audio_data = text_to_speech(data["text"])
+        synthesis_result = text_to_speech_multilingual(data["text"], data["language"])
+        audio_data = synthesis_result["audio"]
+        characters = synthesis_result["characters"]
+        return jsonify({
+                "audio": audio_data,
+                "characters": characters
+            })
+
     except Exception as e:
-        abort(500, str(e))
-    return app.response_class(audio_data, mimetype='audio/wav')
+        return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/speeches/acoustics_scores", methods=["POST"])
+
+
+@app.route("/api/speeches/acoustic_evaluation", methods=["POST"])
 def predict_acoustics_scores():
-    # audio_path = cache_audios(request.files['audio'])
     try:
-        score = acoustic_assess(request.files["query_audio"], request.files["reference_audio"])
+        query_audio = request.files["query_audio"]
+        reference_audio = request.files["reference_audio"]
+        
+        # Read the raw browser bytes immediately
+        query_raw_bytes = query_audio.read()
+        reference_raw_bytes = reference_audio.read()
+        
+        # --- HANDLE TRIMMING SAFELY IN RAM ---
+        raw_offset = float(request.form.get("query_start", 0))
+        query_start = max(0.0, raw_offset)
+
+        score = evaluate_audio_discrepancy(
+            io.BytesIO(query_raw_bytes),
+            io.BytesIO(reference_raw_bytes),
+            query_start
+        )
+
     except Exception as e:
+        app.logger.error(f"Execution crash: {str(e)}")
         abort(500, str(e))
+        
     return jsonify({"score": score})
+
 
 @app.route("/api/sample-questions", methods=["GET"])
 def sample_questions():
-    sample_questions = [ 
-        "What kind of TV programmes do you like to watch?", 
-        "Do you like reading books? Why?"
+    sample_questions = [
+        "What kind of TV programmes do you like to watch?",
+        "Do you like reading books? Why?",
     ]
-    return jsonify({"question":sample_questions[random.randint(0, len(sample_questions)-1)]})
+    return jsonify(
+        {"question": sample_questions[random.randint(0, len(sample_questions) - 1)]}
+    )
 
 
 @app.route("/api/", methods=["GET"])
@@ -131,9 +188,18 @@ def fake_transcribe():
     )
 
 
-@app.errorhandler(RateLimitExceeded)
-def ratelimit_handler(e):
-    return jsonify({
-        "error": "Rate limit exceeded",
-        "message": str(e.description)
-    }), 429
+# @app.errorhandler(RateLimitExceeded)
+# def ratelimit_handler(e):
+#     return jsonify({"error": "Rate limit exceeded", "message": str(e.description)}), 429
+
+
+@app.errorhandler(HTTPException)
+def handle_exception(e):
+    response = e.get_response()
+    response.data = json.dumps({
+        "code": e.code,
+        "name": e.name,
+        "description": e.description, # This will contain your str(e)
+    })
+    response.content_type = "application/json"
+    return response, e.code

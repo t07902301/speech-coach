@@ -22,7 +22,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<MainPage />} />
-        <Route path="/sample_reading" element={<SampleReader />} />
+        <Route path="/sample_reading" element={< SampleReader />} />
         <Route path="/audio_segment_player" element={<AudioSelectinPlayer/>} />
       </Routes>
     </Router>

@@ -1,16 +1,19 @@
-import os
-import tempfile
-from dotenv import load_dotenv
-from openai import OpenAI
-import logging
 import base64
-from pydantic import BaseModel
-import requests
-from werkzeug.datastructures import FileStorage
-from collections import Counter
+import io
+import logging
+import os
 import string
+import tempfile
+from collections import Counter
 from typing import List
+
+import requests
+from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
+from openai import OpenAI
+from pydantic import BaseModel
+from pydub import AudioSegment
+from werkzeug.datastructures import FileStorage
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +24,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 ACOUSTIC_URL = os.getenv("ACOUSTIC_URL", "http://localhost:6000")
+
 
 def speech_to_text(audio: FileStorage):
     client = OpenAI(api_key=API_KEY)
@@ -41,7 +45,10 @@ def speech_to_text(audio: FileStorage):
     finally:
         os.remove(audio_path)
 
-def clip_speech_to_text(audio: FileStorage) -> List[dict]:
+def speech_to_text_group_sentence(audio: FileStorage) -> List[dict]:
+    """
+    Group the transcription result into sentences based on punctuation. Each sentence will have its own start and end timestamps, as well as character-level timestamps for each character in the sentence. \n
+    """
     elevenlabs = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
@@ -55,32 +62,77 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     try:
         transcription = elevenlabs.speech_to_text.convert(
             file=audio_file,
-            model_id="scribe_v1", # Model to use
-            tag_audio_events=True, # Tag audio events like laughter, applause, etc.
-            timestamps_granularity = "character",
-            diarize=True
-        ).model_dump(mode='json')
+            model_id="scribe_v1",  # Model to use
+            tag_audio_events=True,  # Tag audio events like laughter, applause, etc.
+            timestamps_granularity="character",
+            diarize=False,
+        ).model_dump(mode="json")
+        sentences = []
+        current_sentence = []
+        for word in transcription['words']:
+            current_sentence.append(word)
+            if word['text'].endswith(('.', '!', '?')):
+                sentences.append({
+                    "start": current_sentence[0]['start'],
+                    "end": current_sentence[-1]['end'],
+                    "text": "".join(w['text'] for w in current_sentence),
+                    "characters": [c for w in current_sentence for c in w['characters']]
+                })
+                current_sentence = []
+        return sentences
+    except Exception as e:
+        raise Exception(str(e))
+    finally:
+        os.remove(audio_path)
 
-        words = transcription.get('words', [])
+def clip_speech_to_text(audio: FileStorage) -> List[dict]:
+    """
+    Group the transcription result into clips based on speaker diarization. Each clip will have its own start and end timestamps, as well as character-level timestamps for each character in the clip. \n
+    """
+    elevenlabs = ElevenLabs(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
+    )
+    audio_path = tempfile.NamedTemporaryFile(
+        delete=False, suffix=os.path.splitext(audio.filename)[1]
+    ).name  # Create a temporary file sharing the same extension as the input audio file
+    audio.save(audio_path)  # Save the FileStorage Object to the temporary file
+
+    audio_file = open(audio_path, "rb")
+
+    try:
+        transcription = elevenlabs.speech_to_text.convert(
+            file=audio_file,
+            model_id="scribe_v1",  # Model to use
+            tag_audio_events=True,  # Tag audio events like laughter, applause, etc.
+            timestamps_granularity="character",
+            diarize=True,
+        ).model_dump(mode="json")
+
+        words = transcription.get("words", [])
         diarization_segments = []
 
         if words:
             # Initialize the current "buffer" with the first word
             current_segment_words = [words[0]]
-            
+
             # Iterate starting from the second word
             for word in words[1:]:
                 # If speaker changes, commit the buffer and start a new one
-                if word['speaker_id'] != current_segment_words[-1]['speaker_id']:
-                    
+                if word["speaker_id"] != current_segment_words[-1]["speaker_id"]:
                     # -- Commit Logic --
-                    diarization_segments.append({
-                        "start": current_segment_words[0]['start'],
-                        "end": current_segment_words[-1]['end'],
-                        "text": "".join(w['text'] for w in current_segment_words),
-                        "characters": [c for w in current_segment_words for c in w['characters']]
-                    })
-                    
+                    diarization_segments.append(
+                        {
+                            "start": current_segment_words[0]["start"],
+                            "end": current_segment_words[-1]["end"],
+                            "text": "".join(w["text"] for w in current_segment_words),
+                            "characters": [
+                                c
+                                for w in current_segment_words
+                                for c in w["characters"]
+                            ],
+                        }
+                    )
+
                     # Reset buffer with the new word
                     current_segment_words = [word]
                 else:
@@ -89,14 +141,17 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
 
             # -- Commit Final Segment --
             if current_segment_words:
-                diarization_segments.append({
-                    "start": current_segment_words[0]['start'],
-                    "end": current_segment_words[-1]['end'],
-                    "text": "".join(w['text'] for w in current_segment_words),
-                    "characters": [c for w in current_segment_words for c in w['characters']]
-                })
+                diarization_segments.append(
+                    {
+                        "start": current_segment_words[0]["start"],
+                        "end": current_segment_words[-1]["end"],
+                        "text": "".join(w["text"] for w in current_segment_words),
+                        "characters": [
+                            c for w in current_segment_words for c in w["characters"]
+                        ],
+                    }
+                )
             return diarization_segments
-        else:
             raise Exception("No words are found in the transcription.")
     except Exception as e:
         raise Exception(str(e))
@@ -107,27 +162,11 @@ def clip_speech_to_text(audio: FileStorage) -> List[dict]:
     # try:
     #     with open('../tests/audios/char_ts-diarization.pkl', 'rb') as file:
     #         # 2. Load the data from the file
-    #         loaded_data = pkl.load(file)   
+    #         loaded_data = pkl.load(file)
     #     return loaded_data
-    # except Exception as e:
     #     raise Exception(str(e))
     # finally:
-    #     os.remove(audio_path)         
-
-def speech_to_text_timestamps(audio_location: str):
-    client = OpenAI(api_key=API_KEY)
-    audio_file = open(audio_location, "rb")
-    try:
-        transcription = client.audio.transcriptions.create(
-            file=audio_file,
-            model="whisper-1",
-            response_format="verbose_json",
-            timestamp_granularities=["word"],
-        )
-        return transcription.text, transcription.words
-    except Exception as e:
-        raise Exception(str(e))
-
+    #     os.remove(audio_path)
 
 
 class TextRevision(BaseModel):
@@ -137,9 +176,7 @@ class TextRevision(BaseModel):
 # Function to encode the image
 def encode_image(image: FileStorage):
     return base64.b64encode(image.stream.read()).decode("utf-8")
-    # with open(image_path, "rb") as image_file:
     #     return base64.b64encode(image_file.read()).decode("utf-8")
-
 
 def text_to_text(text, image: FileStorage = None, customized_prompt=None):
     client = OpenAI(api_key=API_KEY)
@@ -181,6 +218,7 @@ def text_to_text(text, image: FileStorage = None, customized_prompt=None):
         logger.info(response)
         raise Exception(str(e))
 
+
 def text_to_speech(input_text):
     client = OpenAI(api_key=API_KEY)
     response = client.audio.speech.create(model="tts-1", voice="nova", input=input_text)
@@ -190,40 +228,127 @@ def text_to_speech(input_text):
     # logging.info(f"Generated audio file saved at {audio_path}")
     return response.read()
 
+def text_to_speech_multilingual(input_text: str, language_code: str):
+    logger.info(f"Generating speech for text: {input_text} with language code: {language_code}")
 
-
-def acoustic_assess(query_audio: FileStorage, ref_audio: FileStorage) -> float:
-    """
-    Get the similarity score between two audio files. \n
-    """
-    # url = "http://localhost:6000/api/similarity_scores"
-    # url = "http://speech_assessment-models-1:6000/api/similarity_scores"
-    url = f"{ACOUSTIC_URL}/api/similarity_scores"
-    headers = {}
-
-    response = requests.request(
-        "POST", url, headers=headers, \
-        files= {'query_audio': (query_audio.filename, query_audio), 'reference_audio': (ref_audio.filename, ref_audio)}
+    client = ElevenLabs(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
+    logger.info("Initialized ElevenLabs client.")
+    reps = client.text_to_speech.convert_with_timestamps(
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        output_format="mp3_44100_128",
+        text=input_text,
+        model_id="eleven_flash_v2_5",
+        language_code="fr"
+    )
+    logger.info("Received response from ElevenLabs text-to-speech API.")
 
-    return round(response.json()["score"], 2)
+    # Extract the alignment data for easier access
+    alignment = reps.alignment
+
+    # Use zip to combine the three lists into the new structure
+    mapped_characters = [
+        {
+            "text": char, 
+            "start": start, 
+            "end": end
+        }
+        for char, start, end in zip(
+            alignment.characters, 
+            alignment.character_start_times_seconds, 
+            alignment.character_end_times_seconds
+        )
+    ]
+
+    # Wrap it in the final dictionary format
+    return {"characters": mapped_characters, "audio": reps.audio_base_64}
+
+def generateFileStorage(name: str) -> FileStorage:
+    # Read the audio file as bytes
+    with open(name, "rb") as audio_file:
+        audio_bytes = audio_file.read()
+
+    # Create a FileStorage object
+    audio_file_storage = FileStorage(
+        stream=io.BytesIO(audio_bytes), filename="good.wav", content_type="audio/wav"
+    )
+    return audio_file_storage
+
+def evaluate_audio_discrepancy(
+    query_stream: io.BytesIO, ref_stream: io.BytesIO, query_start: float = None
+) -> float:
+    url = f"{ACOUSTIC_URL}/api/discrepancy_score"
+    try: 
+        # Convert to Pydub segments WITHOUT forcing a format context
+        # This lets ffmpeg auto-detect if the browser sent webm, mp4, etc.
+        query_segment = AudioSegment.from_file(query_stream)
+        reference_segment = AudioSegment.from_file(ref_stream)
+        
+        # # If you want to check local audio quality, export them here as TRUE WAVs
+        # audio_storage = request.form.get("audio_storage", "true").lower() == "true"
+        # if audio_storage:
+        #     query_segment.export('../database/audios/query_audio.wav', format="wav")
+        #     reference_segment.export('../database/audios/reference_audio.wav', format="wav")
+        #     app.logger.info("Saved true standardized WAV files to local disk.")
+        
+        if query_start > 0:
+            query_segment = query_segment[query_start * 1000:]
+
+        # --- STANDARDIZE THE STREAMS SENT TO API-2 ---
+        # Re-export both segments into clean buffers as STRICT WAV files
+        # This guarantees API-2 will NEVER see unrecognized formats again
+        query_stream = io.BytesIO()
+        reference_stream = io.BytesIO()
+        
+        query_segment.export(query_stream, format="wav")
+        reference_segment.export(reference_stream, format="wav")
+        
+        query_stream.seek(0)
+        reference_stream.seek(0)
+        
+        response = requests.post(
+            url,
+            files={
+                "query_audio": ("query.wav", query_stream, "audio/wav"),
+                "reference_audio": ("reference.wav", reference_stream, "audio/wav")
+            }
+        )
+        if response.status_code == 200:
+            return round(response.json()["score"], 2)
+        else:
+            raise Exception(f"Acoustic evaluation failed with status {response.status_code}: {response.text}")
+    except Exception as e:
+        raise Exception(f"Error during acoustic evaluation: {str(e)}")
+    
+def load_fileStorage(audio: FileStorage, path: str) -> str:
+    # Read the file data into memory
+    file_bytes = audio.read()
+
+    # Load the audio data regardless of the input format
+    # This automatically detects if it's webm, ogg, wav, etc.
+    audio_segment = AudioSegment.from_file(io.BytesIO(file_bytes))
+
+    # Export as a standardized WAV
+    audio_segment.export(path, format="wav")
+
+    logger.info(f"Audio file saved to {path}")
 
 
-def store_audio(audio: FileStorage) -> str:
-    """
-    Save the audio file to the database. \n
+def save_bytes_as_wav(file_bytes: bytes, path: str):
+    """Clean companion utility that processes pure bytes without wrapper dependency"""
+    if len(file_bytes) == 0:
+        raise ValueError("Cannot convert an empty file buffer.")
+    audio_segment = AudioSegment.from_file(io.BytesIO(file_bytes))
+    audio_segment.export(path, format="wav")
 
-    """
-    audio_path = f"../database/audios/{audio.filename}"
-    audio.save(audio_path)
-    return audio_path
 
 def eval_revision(transcript: str, revision: str) -> float:
     """
     Use ROUGE to calculate how many words in revision are in the transcription \n
     """
     # Remove punctuation from the transcript and revision
-    translator = str.maketrans('', '', string.punctuation)
+    translator = str.maketrans("", "", string.punctuation)
     transcript = transcript.translate(translator)
     revision = revision.translate(translator)
     # Convert both transcript and revision to lowercase
@@ -237,7 +362,7 @@ def eval_revision(transcript: str, revision: str) -> float:
     reference_count = Counter(reference_words)
     candidate_count = Counter(candidate_words)
     overlap = sum(min(candidate_count[w], reference_count[w]) for w in candidate_count)
-    
+
     # Compute precision, recall, and F1 score
     recall = overlap / len(reference_words)
-    return round(recall* 100, 4)
+    return round(recall * 100, 4)
