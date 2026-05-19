@@ -127,26 +127,59 @@ def generate_speech():
         return jsonify({"error": str(e)}), 500
 
 
+import io
+
+# @app.route("/api/speeches/acoustic_evaluation", methods=["POST"])
+# def predict_acoustics_scores():
+#     # audio_path = cache_audios(request.files['audio'])
+#     try:
+#         query_audio = request.files["query_audio"]
+#         reference_audio = request.files["reference_audio"]
+#         audio_storage = request.form.get("audio_storage", "true").lower() == "true"
+#         if audio_storage:
+#             # load audios for local testing 
+#             load_fileStorage(query_audio, '../database/audios/query_audio.wav')
+#             load_fileStorage(reference_audio, '../database/audios/reference_audio.wav')
+#             app.logger.info("saved query and reference audio for local testing")
+#         # reset file pointer to the beginning after saving
+#         query_audio.seek(0)
+#         reference_audio.seek(0)
+#         query_stream = io.BytesIO(query_audio.read())
+#         reference_stream = io.BytesIO(reference_audio.read())
+#         score = evaluate_audio_discrepancy(
+#             query_stream, reference_stream,
+#             float(request.form.get("query_start", 0)),
+#         )
+#     except Exception as e:
+#         abort(500, str(e))
+#     return jsonify({"score": score})
+
+from pydub import AudioSegment
 
 @app.route("/api/speeches/acoustic_evaluation", methods=["POST"])
 def predict_acoustics_scores():
-    # audio_path = cache_audios(request.files['audio'])
     try:
         query_audio = request.files["query_audio"]
         reference_audio = request.files["reference_audio"]
-        # # load audios for local testing 
-        # load_fileStorage(query_audio, '../database/audios/query_audio.wav')
-        # load_fileStorage(reference_audio, '../database/audios/reference_audio.wav')
-        # # reset file pointer to the beginning after saving
-        # query_audio.seek(0)
-        # reference_audio.seek(0)
+        
+        # Read the raw browser bytes immediately
+        query_raw_bytes = query_audio.read()
+        reference_raw_bytes = reference_audio.read()
+        
+        # --- HANDLE TRIMMING SAFELY IN RAM ---
+        raw_offset = float(request.form.get("query_start", 0))
+        query_start = max(0.0, raw_offset)
+
         score = evaluate_audio_discrepancy(
-            query_audio,
-            reference_audio,
-            float(request.form.get("query_start", 0)),
+            io.BytesIO(query_raw_bytes),
+            io.BytesIO(reference_raw_bytes),
+            query_start
         )
+
     except Exception as e:
+        app.logger.error(f"Execution crash: {str(e)}")
         abort(500, str(e))
+        
     return jsonify({"score": score})
 
 
@@ -183,3 +216,17 @@ def fake_transcribe():
 # @app.errorhandler(RateLimitExceeded)
 # def ratelimit_handler(e):
 #     return jsonify({"error": "Rate limit exceeded", "message": str(e.description)}), 429
+
+from flask import jsonify
+from werkzeug.exceptions import HTTPException
+
+@app.errorhandler(HTTPException)
+def handle_exception(e):
+    response = e.get_response()
+    response.data = json.dumps({
+        "code": e.code,
+        "name": e.name,
+        "description": e.description, # This will contain your str(e)
+    })
+    response.content_type = "application/json"
+    return response, e.code
