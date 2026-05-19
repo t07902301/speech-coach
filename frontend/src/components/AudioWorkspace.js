@@ -1,20 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import WaveSurfer from 'wavesurfer.js';
-import RecordPlugin from 'wavesurfer.js/dist/plugins/record.js';
 import Multitrack from 'wavesurfer-multitrack';
+import AudioRecorder from "./AudioRecorder";
 
 const AudioWorkspace = ({ mainAudioUrl='' }) => {
   // --- States ---
-  const [record, setRecord] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [offset, setOffset] = useState(0);
   const [recordedUrl, setRecordedUrl] = useState('');
-  const [progress, setProgress] = useState('00:00');
-  const pauseButtonRef = useRef(null);
-  const recButtonRef = useRef(null);
 
   // --- Refs ---
-  const wavesurferRef = useRef(null);
   const multitrackRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -22,94 +16,6 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
   // NEW: State for API submission
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
-
-  // --------------------------------------------------
-  // 1. Recorder Initialization
-  // --------------------------------------------------
-
-
-  useEffect(() => {
-    
-    const createWaveSurfer = () => {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-      }
-  
-      const newWaveSurfer = WaveSurfer.create({
-        container: '#mic',
-        waveColor: 'rgb(200, 0, 200)',
-        progressColor: 'rgb(100, 0, 100)',
-      });
-  
-      const newRecord = newWaveSurfer.registerPlugin(
-        RecordPlugin.create({
-          renderRecordedAudio: false,
-          scrollingWaveform: false,
-          continuousWaveform: true,
-          continuousWaveformDuration: 30,
-        })
-      );
-  
-  
-      newRecord.on('record-end', (blob) => {
-        setRecordedUrl(URL.createObjectURL(blob));
-      });
-  
-      newRecord.on('record-progress', (time) => {
-        updateProgress(time); 
-      });
-  
-      wavesurferRef.current = newWaveSurfer;
-      setRecord(newRecord);
-    };
-    
-    createWaveSurfer();
-    
-    return () => {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-      }
-    };
-  }, []);
-
-  const updateProgress = (time) => {
-    const formattedTime = [
-      Math.floor((time % 3600000) / 60000),
-      Math.floor((time % 60000) / 1000),
-    ]
-      .map((v) => (v < 10 ? '0' + v : v))
-      .join(':');
-    setProgress(formattedTime);
-  };
-
-  const handlePauseClick = () => {
-    if (record.isPaused()) {
-      record.resumeRecording();
-      pauseButtonRef.current.textContent = 'Pause';
-    } else {
-      record.pauseRecording();
-      pauseButtonRef.current.textContent = 'Resume';
-    }
-  };
-
-  const handleRecordClick = () => {
-    // Record or Stop
-    if (record.isRecording() || record.isPaused()) { // if recording started or paused with the button says Stop
-      record.stopRecording();
-      recButtonRef.current.textContent = 'Record';
-      recButtonRef.current.style.backgroundColor = "#28a745";
-      pauseButtonRef.current.style.display = 'none';
-    } else { 
-      recButtonRef.current.disabled = true;
-      record.startRecording().then(() => {
-        recButtonRef.current.textContent = 'Stop';
-        recButtonRef.current.disabled = false;
-        recButtonRef.current.style.backgroundColor = "rgb(193, 45, 45)";
-        pauseButtonRef.current.style.display = 'inline';
-        pauseButtonRef.current.textContent = 'Pause';
-      });
-    }
-  };
 
   // --------------------------------------------------
   // 2. Multitrack Initialization
@@ -197,81 +103,55 @@ const AudioWorkspace = ({ mainAudioUrl='' }) => {
     const referenceBlob = await referenceResponse.blob();
     const queryBlob = await queryResponse.blob();
 
-
     // Append the files
-    formData.append('reference_audio', referenceBlob, 'reference.wav');
-    formData.append('query_audio', queryBlob, 'query.wav');
+    formData.append('reference_audio', referenceBlob);
+    formData.append('query_audio', queryBlob);
     
     // Append the final offset. (Backend usually expects strings or numbers)
     formData.append('query_start', -offset); 
-    try {
-      const response = await fetch(BACKEND_URL + "/speeches/acoustic_evaluation", {
-          method: "POST",
-          body: formData,
-      });
+try {
+    const response = await fetch(BACKEND_URL + "/speeches/acoustic_evaluation", {
+        method: "POST",
+        body: formData,
+    });
 
-      if (response.ok) {
-          const result = await response.json();
-          setSubmitStatus(`✅ Successfully processed! Audio Discrepancy: ${result.score}`);
+    if (response.ok) {
+        const result = await response.json();
+        setSubmitStatus(`✅ Successfully processed! Audio Discrepancy: ${result.score}`);
+    } else {
+        let errorMessage = response.statusText;
+        
+        try {
+            const errorData = await response.json();
+            
+            // Extract the message based on the global handler keys:
+            // errorData.description contains your specific Python str(e)
+            if (errorData && errorData.description) {
+                errorMessage = errorData.description;
+            } else if (errorData && errorData.message) {
+                errorMessage = errorData.message;
+            }
+        } catch (jsonErr) {
+            // Fallback if the response isn't JSON
+        }
 
-      } else {
-          console.error('Acoustic Evaluation Error:', response.statusText);
-          alert(`Error ${response.status}: ${response.statusText}`);
-          setSubmitStatus('❌ Failed to upload. Check your connection or API.');
-      }
-  } catch (error) {
-      console.error('Error:', error);
-      alert(`An error occurred: ${error}`);
-  } finally {
-      setIsSubmitting(false);
+        console.error('Acoustic Evaluation Error:', errorMessage);
+        alert(`Error ${response.status}: ${errorMessage}`);
+        setSubmitStatus(`❌ Failed: ${errorMessage}`);
     }
+} catch (error) {
+    console.error('Error:', error);
+    alert(`An error occurred: ${error.message || error}`);
+} finally {
+    setIsSubmitting(false);
+}
   };
 
   return (
     <div>
       {/* Recording Area */}
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '80%' }}>
-        <div id="control-buttons" style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-          <button
-            id="pause"
-            ref={pauseButtonRef}
-            onClick={handlePauseClick}
-            style={{
-              padding: '10px 20px',
-              marginRight: '10px',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              display: 'none',
-            }}
-          >
-            Pause
-          </button>
-          <button
-            id="record"
-            ref={recButtonRef}
-            onClick={handleRecordClick}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              display: 'inline',
-            }}
-          >
-            Record
-          </button>      
-        </div>
-        <div id="progress" style={{ margin: '10px 0' }}>Recording Time: {progress}</div>
-        <br />
-        <div id="mic" style={{ width: '100%', height: '50%'}}></div>
-        <div id="recordings" style={{ width: '100%', height: '30%' }}></div>
-      </div>
+      <AudioRecorder upliftQueryAudioUrl={setRecordedUrl}/>
 
       <hr />
 
