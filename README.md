@@ -2,7 +2,7 @@
 
 While preparing for English and French speaking tests, I noticed that most existing AI-powered tools were too recreational, distracting, and overpriced. So, I decided to create a simple and practical alternative for people who want to improve their speech skills. 
 
-Right now, this app allows you to transcribe your voice recordings, polish transcriptions with OpenAI's models, evaluate the acoustic quality, and learn from real/synthetic audios. These features are super handy for any language learning and any other speech scenarios, like job interviews, since good fluency and clear content are usually all you need to shine while you talk! 🌟🗣️📚  
+Right now, this app allows you to transcribe your voice recordings, polish transcriptions with OpenAI's models, evaluate the acoustic quality, and learn from real/synthetic audios. These features are super handy for any language learning and any other speech scenarios, like job interviews, since good fluency and clear content are usually all you need to shine while you talk! 🌟🗣️📚 
 
 ## Features
 
@@ -64,4 +64,6 @@ Right now, this app allows you to transcribe your voice recordings, polish trans
     docker compose up -d --build
     ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in your browser. 🌐
+3. To enable voice comparison quantification, please spin up another Docker container in the repo: https://github.com/t07902301/acoustics-naturalness.
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser. 🌐
