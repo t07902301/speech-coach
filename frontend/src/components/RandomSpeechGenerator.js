@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import AudioSnippetPlayer from './AudioSnippetPlayer';
 import TextSelector from './TextSelector';
 
-const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
+const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}, upliftReferenceTimeRange  = () => {}}) => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
     const [audioUrl, setAudioUrl] = useState('');
     const textAreaRef = useRef(null);
@@ -17,6 +17,12 @@ const SpeechGenerator = ({upliftReferenceSpeechURL = () => {}}) => {
             upliftReferenceSpeechURL(audioUrl);
         }
     }, [audioUrl]);
+
+    useEffect(() => {
+        if (timeRange.end !== 0) {
+            upliftReferenceTimeRange(timeRange); 
+        }
+    }, [timeRange]);
 
     const generateSpeech = async (textToSend) => {
         setIsLoading(true);
