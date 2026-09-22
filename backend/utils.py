@@ -236,7 +236,7 @@ def text_to_speech_multilingual(input_text: str, language_code: str):
     )
     logger.info("Initialized ElevenLabs client.")
     reps = client.text_to_speech.convert_with_timestamps(
-        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        voice_id=os.getenv("ELEVENLABS_VOICE_ID"),
         output_format="mp3_44100_128",
         text=input_text,
         model_id="eleven_flash_v2_5",
