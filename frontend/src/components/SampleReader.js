@@ -1,17 +1,30 @@
-import SpeechGenerator from "./RandomSpeechGenerator";
-import AudioWorkspace from "./AudioWorkspace";
-import React from 'react';
+import React, { useState } from 'react';
+import SpeechGenerator from './RandomSpeechGenerator';
+import AudioWorkspace from './AudioWorkspaceTest';
 
 const SampleReader = () => {
-    const [reference_speech_url, setReferenceSpeechURL] = React.useState("");
-    const upliftReferenceSpeechURL = (reference_speech_url) => {
-        setReferenceSpeechURL(reference_speech_url);
+    // Store master audio buffer and the user's selected segment range
+    const [referenceBuffer, setReferenceBuffer] = useState(null);
+    const [timeRange, setTimeRange] = useState({ start: 0, end: 0 });
+
+    const handleSpeechGenerated = (buffer, initialTimeRange) => {
+        setReferenceBuffer(buffer);
+        setTimeRange(initialTimeRange);
     };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', height: '100vh', paddingTop: '20px' }}>
-            <SpeechGenerator upliftReferenceSpeechURL={upliftReferenceSpeechURL} />
+            <SpeechGenerator 
+                onSpeechGenerated={handleSpeechGenerated} 
+            />
+            
             <h2>Let me Try!</h2>
-            <AudioWorkspace mainAudioUrl={reference_speech_url}/>
+            
+            {/* Pass the buffer and selected range down for visualization & comparison */}
+            <AudioWorkspace 
+                referenceBuffer={referenceBuffer}
+                timeRange={timeRange}
+            />
         </div>
     );
 };
