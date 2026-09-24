@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-export const AudioSnippetPlayer = ({ audioBuffer, timeRange }) => {
+const AudioSnippetPlayer = ({ audioBuffer, timeRange }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const audioCtxRef = useRef(null);
     const activeSourceRef = useRef(null);
@@ -77,3 +77,5 @@ export const AudioSnippetPlayer = ({ audioBuffer, timeRange }) => {
         </div>
     );
 };
+
+export default AudioSnippetPlayer;
