@@ -22,23 +22,23 @@ const base64ToArrayBuffer = (base64) => {
     }
     return bytes.buffer;
   };
-const SpeechGenerator = ({ upliftReferenceSpeechURL = () => {} }) => {
+const SpeechGenerator = ({ 
+    onSpeechGenerated = () => {}
+}) => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-    const [audioUrl, setAudioUrl] = useState('');
     const textAreaRef = useRef(null);
     const [isLoading, setIsLoading] = useState(false);
     const [characters, setCharacters] = useState([]); // For character-level timing metadata
     const [timeRange, setTimeRange] = useState({ start: 0, end: 0 });
+    const [audioBuffer, setAudioBuffer] = useState(null);
 
     useEffect(() => {
-        if (audioUrl !== '') {
-            upliftReferenceSpeechURL(audioUrl);
+        // Notify parent component whenever audioBuffer or timeRange changes
+        if (audioBuffer) {
+            onSpeechGenerated(audioBuffer, timeRange);
         }
-    }, [audioUrl]);
+    }, [audioBuffer, timeRange, onSpeechGenerated]);
 
-    const [audioBuffer, setAudioBuffer] = useState(null);
-    const activeSourceRef = useRef(null); // Keep track of active audio source node
-    
     const generateSpeech = async (textToSend) => {
       setIsLoading(true);
       try {
