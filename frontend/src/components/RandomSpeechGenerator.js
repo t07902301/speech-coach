@@ -1,8 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import AcousticsVisual from './AcousticsVisual';
 import AudioSnippetPlayer from './AudioSnippetPlayer';
 import TextSelector from './TextSelector';
 
+// Manage AudioContext singleton to avoid re-creation warnings
+const audioCtxRef = { current: null };
+const getAudioContext = () => {
+if (!audioCtxRef.current) {
+    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+}
+if (audioCtxRef.current.state === 'suspended') {
+    audioCtxRef.current.resume();
+}
+return audioCtxRef.current;
+};
+const base64ToArrayBuffer = (base64) => {
+    const binaryString = window.atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  };
 const SpeechGenerator = ({ upliftReferenceSpeechURL = () => {} }) => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
     const [audioUrl, setAudioUrl] = useState('');
@@ -17,32 +36,46 @@ const SpeechGenerator = ({ upliftReferenceSpeechURL = () => {} }) => {
         }
     }, [audioUrl]);
 
+    const [audioBuffer, setAudioBuffer] = useState(null);
+    const activeSourceRef = useRef(null); // Keep track of active audio source node
+    
     const generateSpeech = async (textToSend) => {
-        setIsLoading(true);
-        try {
-            const response = await fetch(BACKEND_URL + '/speeches/generate/synthesis', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: textToSend, language: "fr" })
-            });
-            if (!response.ok) {
-                throw new Error(response.statusText);
-            }
-            const data = await response.json();
-            setAudioUrl(`data:audio/wav;base64,${data.audio}`); // Store the URL for the audio player
-            setCharacters(data.characters); // Store character timings for mapping highlights
-            
-            // Initialize time range to full length
-            let endTime = data.characters.length > 0 ? data.characters[data.characters.length - 1].end : 0;
-            setTimeRange({ start: 0, end: endTime });
-
-            console.log('Speech generated successfully');
-        } catch (error) {
-            alert('Error generating speech: ' + error.message);
-            setAudioUrl(''); // Clear audio URL on error
-        } finally {
-            setIsLoading(false);
+      setIsLoading(true);
+      try {
+        const response = await fetch(BACKEND_URL + '/speeches/generate/synthesis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: textToSend, language: "fr" })
+        });
+    
+        if (!response.ok) {
+          throw new Error(response.statusText);
         }
+    
+        const data = await response.json();
+    
+        // 1. Convert Base64 to ArrayBuffer
+        const arrayBuffer = base64ToArrayBuffer(data.audio);
+    
+        // 2. Decode ArrayBuffer into an AudioBuffer
+        const audioContext = getAudioContext();
+        const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    
+        // 3. Store AudioBuffer in state
+        setAudioBuffer(decodedBuffer);
+        setCharacters(data.characters);
+        
+        // 4. Initialize time range using exact audio duration (or character timestamps)
+        const duration = decodedBuffer.duration; // Exact audio duration in seconds
+        setTimeRange({ start: 0, end: duration });
+    
+        console.log('Speech generated and decoded successfully');
+      } catch (error) {
+        alert('Error generating speech: ' + error.message);
+        setAudioBuffer(null); // Clear buffer on error
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     const handleButtonClick = () => {
@@ -54,18 +87,18 @@ const SpeechGenerator = ({ upliftReferenceSpeechURL = () => {} }) => {
         }
     };
 
-    // Resets the range back to the beginning and final character timestamp
+    // Check if full audio range is selected
+    const isFullRangeSelected = 
+        audioBuffer && 
+        timeRange.start === 0 && 
+        Math.abs(timeRange.end - audioBuffer.duration) < 0.05;
+
+    // Reset time selection to full audio length
     const resetToFullRange = () => {
-        if (characters.length > 0) {
-            const maxDuration = characters[characters.length - 1].end;
-            setTimeRange({ start: 0, end: maxDuration });
+        if (audioBuffer) {
+            setTimeRange({ start: 0, end: audioBuffer.duration });
         }
     };
-
-    // Helper to check if the current selection is already looking at the entire clip
-    const isFullRangeSelected = characters.length > 0 && 
-        timeRange.start === 0 && 
-        timeRange.end === characters[characters.length - 1].end;
 
     return (
         <div style={{ width: '80%' }}>
@@ -76,22 +109,31 @@ const SpeechGenerator = ({ upliftReferenceSpeechURL = () => {} }) => {
                 <button 
                     onClick={handleButtonClick} 
                     style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                    disabled={isLoading}
                 >
                     {isLoading ? 'Loading...' : 'Sample Reading'}
                 </button>
-
-                {audioUrl && !isFullRangeSelected && (
+    
+                {/* Check audioBuffer instead of audioUrl */}
+                {audioBuffer && !isFullRangeSelected && (
                     <button 
                         onClick={resetToFullRange} 
                         style={{ padding: '10px 20px', backgroundColor: '#6C757D', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
                     >
-                        Reset to Play the Whole Audio
+                        Reset to Play Whole Audio
                     </button>
                 )}
             </div>
-
+    
             <TextSelector timestamps={characters} onRangeSelected={setTimeRange} />
-            {audioUrl && <AudioSnippetPlayer audioUrl={audioUrl} timeRange={timeRange} />}
+            
+            {/* Pass audioBuffer instead of audioUrl */}
+            {audioBuffer && (
+                <AudioSnippetPlayer 
+                    audioBuffer={audioBuffer} 
+                    timeRange={timeRange} 
+                />
+            )}
         </div>
     );
 };

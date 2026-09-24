@@ -1,61 +1,79 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
-function AudioSnippetPlayer({ audioUrl, timeRange }) {
-  const audioRef = useRef(null);
+export const AudioSnippetPlayer = ({ audioBuffer, timeRange }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioCtxRef = useRef(null);
+    const activeSourceRef = useRef(null);
 
-  const playSnippet = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    // Stop playback if user updates segment selection while playing
+    useEffect(() => {
+        stopAudio();
+    }, [timeRange]);
 
-    // 1. Seek immediately to the selection's start time
-    audio.currentTime = timeRange.start;
-    
-    // 2. Play the audio
-    audio.play().catch(err => console.error("Playback failed:", err));
-  };
+    const playSegment = () => {
+        if (!audioBuffer) return;
 
-  // Listen to the audio updates to enforce the "end" boundary
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+        // Reuse or create AudioContext instance
+        if (!audioCtxRef.current) {
+            audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        if (audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume();
+        }
 
-    const handleTimeUpdate = () => {
-      // 3. If the audio passes the end time, pause it immediately
-      if (audio.currentTime >= timeRange.end) {
-        audio.pause();
-        // Optional: Reset back to start or keep it at the end
-        audio.currentTime = timeRange.start; 
-      }
+        // Stop any currently playing audio node
+        stopAudio();
+
+        // Create buffer source node
+        const source = audioCtxRef.current.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioCtxRef.current.destination);
+
+        const start = timeRange.start;
+        const duration = Math.max(0, timeRange.end - timeRange.start);
+
+        // Reset playing state when audio snippet ends naturally
+        source.onended = () => {
+            setIsPlaying(false);
+        };
+
+        // start(whenToPlay, offsetInSeconds, durationInSeconds)
+        source.start(0, start, duration);
+        activeSourceRef.current = source;
+        setIsPlaying(true);
     };
 
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-
-    return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
+    const stopAudio = () => {
+        if (activeSourceRef.current) {
+            try {
+                activeSourceRef.current.stop();
+            } catch (e) {
+                // Ignore if already stopped
+            }
+            activeSourceRef.current = null;
+        }
+        setIsPlaying(false);
     };
-  }, [timeRange]);
 
-  return (
-    <div style={{ marginTop: '20px' }}>
-      <audio 
-        ref={audioRef} 
-        src={audioUrl} 
-        controls
-        style={styles.audioPlayer}
-      />
-      <button 
-        onClick={playSnippet}
-        disabled={timeRange.start === timeRange.end}
-        style={{ padding: '10px 15px', cursor: 'pointer' }}
-      >
-        Play Selected Snippet ({timeRange.start}s - {timeRange.end}s)
-      </button>
-    </div>
-  );
-}
-const styles = {
-  container: { maxWidth: '600px', margin: '20px auto', fontFamily: 'sans-serif' },
-  playerContainer: { margin: '20px 0', padding: '15px', background: '#4caf50', borderRadius: '8px' },
-  audioPlayer: { width: '100%' },
+    return (
+        <div style={{ marginTop: '15px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
+            <p>
+                <strong>Selected Range:</strong> {timeRange.start.toFixed(2)}s – {timeRange.end.toFixed(2)}s
+            </p>
+            <button 
+                onClick={isPlaying ? stopAudio : playSegment}
+                style={{
+                    padding: '8px 16px',
+                    backgroundColor: isPlaying ? '#DC3545' : '#28A745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                }}
+            >
+                {isPlaying ? 'Stop Segment' : 'Play Selected Segment'}
+            </button>
+        </div>
+    );
 };
-export default AudioSnippetPlayer;
