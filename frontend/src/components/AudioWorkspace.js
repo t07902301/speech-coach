@@ -69,7 +69,8 @@ const AudioWorkspace = ({ referenceBuffer, timeRange }) => {
   // --- States ---
   const [isPlaying, setIsPlaying] = useState(false);
   const [offset, setOffset] = useState(0);
-  const [recordedUrl, setRecordedUrl] = useState('');
+  const [userBlobUrl, setUserBlobUrl] = useState('');
+  const [refBlobUrl, setRefBlobUrl] = useState('');
 
   // --- Refs ---
   const multitrackRef = useRef(null);
@@ -92,10 +93,7 @@ const AudioWorkspace = ({ referenceBuffer, timeRange }) => {
 
     // 2. Convert sliced buffer to an in-memory WAV Blob URL
     const refWavBlob = bufferToWavBlob(slicedBuffer);
-    const refBlobUrl = URL.createObjectURL(refWavBlob);
-
-    // 3. Create Blob URL for user recording (if available)
-    const userBlobUrl = userAudioBlob ? URL.createObjectURL(userAudioBlob) : null;
+    setRefBlobUrl(URL.createObjectURL(refWavBlob));
 
     // Clean up previous instance
     if (multitrackRef.current) {
@@ -105,7 +103,7 @@ const AudioWorkspace = ({ referenceBuffer, timeRange }) => {
     // 4. Build tracks array using Blob URLs
     const tracks = [
         {
-            id: 'reference-segment',
+            id: 'reference',
             url: refBlobUrl,
             startPosition: 0,
             draggable: false,
@@ -161,7 +159,7 @@ const AudioWorkspace = ({ referenceBuffer, timeRange }) => {
   };
   const handleEvaluation = async () => {
     // 1. Validate that we have both files
-    if (!mainAudioUrl || !recordedUrl) {
+    if ( !refBlobUrl || !userBlobUrl) {
       setSubmitStatus('Error: Please upload both files before submitting.');
       return;
     }
@@ -175,8 +173,8 @@ const AudioWorkspace = ({ referenceBuffer, timeRange }) => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
     // Note: Since we only have URLs, we need to fetch the blobs first
-    const referenceResponse = await fetch(mainAudioUrl);
-    const queryResponse = await fetch(recordedUrl);
+    const referenceResponse = await fetch(refBlobUrl);
+    const queryResponse = await fetch(userBlobUrl);
     if (!referenceResponse.ok || !queryResponse.ok) {
       throw new Error('Failed to fetch audio files from URLs.');
     }
@@ -231,16 +229,16 @@ try {
     <div>
       {/* Recording Area */}
 
-      <AudioRecorder upliftQueryAudioUrl={setRecordedUrl}/>
+      <AudioRecorder upliftQueryAudioUrl={setUserBlobUrl}/>
 
       <hr />
 
       {/* Multitrack Area */}
       <h3>Multitrack Editor</h3>
-      {!recordedUrl && <p>Record some audio to see the multitrack effect!</p>}
+      {!userBlobUrl && <p>Record some audio to see the multitrack effect!</p>}
       <div ref={containerRef} style={{ width: '100%', minHeight: '200px' }}></div>
       
-      {recordedUrl && (
+      {userBlobUrl && (
           <button
             onClick={playMultitrack}
             style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '4px' }}
@@ -252,7 +250,7 @@ try {
       <p>Offset: {-offset.toFixed(2)} seconds</p>
       <button
             onClick={handleEvaluation}
-            disabled={isSubmitting || !mainAudioUrl || !recordedUrl}
+            disabled={isSubmitting || !refBlobUrl || !userBlobUrl}
             style={{
               padding: '12px 24px',
               backgroundColor: isSubmitting ? '#999' : '#007BFF',

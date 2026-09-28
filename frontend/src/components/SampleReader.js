@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import SpeechGenerator from './RandomSpeechGenerator';
-import AudioWorkspace from './AudioWorkspaceTest';
+import AudioWorkspace from './AudioWorkspace';
 
 const SampleReader = () => {
     // Store master audio buffer and the user's selected segment range
