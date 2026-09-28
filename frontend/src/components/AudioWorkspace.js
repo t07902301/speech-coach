@@ -139,6 +139,12 @@ const AudioWorkspace = ({ referenceBuffer, timeRange }) => {
     );
 
     multitrackRef.current = multitrack;
+    
+    multitrackRef.current.on('start-position-change', ({ id, startPosition }) => {
+      if (id === 'user-recording') {
+        setOffset(startPosition);
+      }
+    });
 
     // 6. Memory Cleanup: Revoke Blob URLs when component unmounts or inputs change
     return () => {
