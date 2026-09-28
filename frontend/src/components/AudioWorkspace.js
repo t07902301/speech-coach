@@ -142,13 +142,11 @@ const AudioWorkspace = ({ referenceBuffer, timeRange }) => {
 
     // 6. Memory Cleanup: Revoke Blob URLs when component unmounts or inputs change
     return () => {
-        multitrack.destroy();
-        URL.revokeObjectURL(refBlobUrl);
-        if (userBlobUrl) URL.revokeObjectURL(userBlobUrl);
-        setIsPlaying(false);
-        setOffset(0);
-    };
-  },  [referenceBuffer, timeRange.start, timeRange.end]); 
+      multitrack.destroy();
+      URL.revokeObjectURL(refBlobUrl);
+      if (userBlobUrl) URL.revokeObjectURL(userBlobUrl);
+  };
+  },  [referenceBuffer, timeRange.start, timeRange.end, userBlobUrl]); 
 
   // // --- Helper Controls ---
   const playMultitrack = () => {
