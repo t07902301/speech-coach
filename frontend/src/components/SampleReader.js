@@ -7,9 +7,9 @@ const SampleReader = () => {
     const [referenceBuffer, setReferenceBuffer] = useState(null);
     const [timeRange, setTimeRange] = useState({ start: 0, end: 0 });
 
-    const handleSpeechGenerated = (buffer, initialTimeRange) => {
+    const handleSpeechGenerated = (buffer, timeRange) => {
         setReferenceBuffer(buffer);
-        setTimeRange(initialTimeRange);
+        setTimeRange(timeRange);
     };
 
     return (
