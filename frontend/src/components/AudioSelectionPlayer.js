@@ -57,7 +57,7 @@ const AudioSelectinPlayer = () => {
       if (clipOption === 'speaker') {
         formData.append('clip_option', 'speaker');
       }
-      else {
+      else if (clipOption === 'sentence') {
         formData.append('clip_option', 'sentence');
       }
       const response = await fetch(BACKEND_URL + '/speeches/transcription_clips', {
